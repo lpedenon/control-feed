@@ -62,6 +62,18 @@ describe('startOptions', () => {
     expect(input('only-allowed').checked).toBe(false);
   });
 
+  it('marks unfinished sites with a note linking to the details', async () => {
+    const { store } = fakeStore(DEFAULT_SETTINGS);
+    stop = await startOptions(root, store);
+    const instagram = input('site-instagram').closest('section');
+    const note = instagram?.querySelector('.site-note');
+    expect(note?.textContent).toContain('Unfinished');
+    expect(note?.querySelector('a')?.getAttribute('href')).toBe(
+      'https://github.com/lpedenon/control-feed/issues/2',
+    );
+    expect(input('site-youtube').closest('section')?.querySelector('.site-note')).toBeNull();
+  });
+
   it('saves a switch change right away', async () => {
     const fake = fakeStore(DEFAULT_SETTINGS);
     stop = await startOptions(root, fake.store);

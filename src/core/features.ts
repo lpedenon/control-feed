@@ -6,6 +6,19 @@ export const SITE_LABELS: Readonly<Record<Site, string>> = {
   instagram: 'Instagram',
 };
 
+export interface SiteNote {
+  readonly text: string;
+  readonly link: { readonly label: string; readonly url: string };
+}
+
+/** Shown under a site's heading in the settings, for sites whose support is incomplete. */
+export const SITE_NOTES: Readonly<Partial<Record<Site, SiteNote>>> = {
+  instagram: {
+    text: 'Unfinished: hashtag pages still show posts from anyone, and only the desktop layout has been checked.',
+    link: { label: 'Details', url: 'https://github.com/lpedenon/control-feed/issues/2' },
+  },
+};
+
 export interface FeatureDefinition {
   readonly site: Site;
   readonly group: string;
@@ -80,7 +93,7 @@ export const FEATURES = {
     group: 'Feed',
     label: 'Hide Explore',
     description:
-      'Removes the grid of recommended posts from the Search page and closes hashtag and place pages. Search still works.',
+      'Removes the grid of recommended posts from the Search page and closes place pages. Search still works.',
     defaultEnabled: true,
   },
   igSuggested: {

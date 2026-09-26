@@ -263,6 +263,21 @@ textarea::placeholder {
   display: none;
 }
 
+.site-note {
+  margin: 2px 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 13.5px;
+}
+
+.site-note a {
+  color: inherit;
+  font-weight: 600;
+  text-underline-offset: 2px;
+}
+
 /* Save status toast */
 .status {
   position: fixed;

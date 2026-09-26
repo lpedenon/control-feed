@@ -4,6 +4,7 @@ import {
   type FeatureKey,
   featureKeysForSite,
   SITE_LABELS,
+  SITE_NOTES,
   SITES,
   type Site,
 } from '../core/features';
@@ -191,6 +192,7 @@ export function createOptionsView(root: HTMLElement, handlers: OptionsHandlers):
           ])
         : null;
 
+    const note = SITE_NOTES[site];
     const section = el(
       doc,
       'section',
@@ -203,6 +205,14 @@ export function createOptionsView(root: HTMLElement, handlers: OptionsHandlers):
             toggle,
           ]),
         ]),
+        note &&
+          el(doc, 'p', { className: 'site-note' }, [
+            `${note.text} `,
+            el(doc, 'a', {
+              text: note.link.label,
+              attrs: { href: note.link.url, target: '_blank', rel: 'noopener noreferrer' },
+            }),
+          ]),
         el(doc, 'div', { className: 'site-body' }, [...groups, filters]),
       ],
     );

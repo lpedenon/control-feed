@@ -2,9 +2,13 @@ import { isFeatureActive, type Settings } from '../../core/settings';
 
 const REELS_FEED = /^\/reels(\/|$)/;
 /**
- * Pages under /explore/ such as hashtags, places and suggested people. The
- * /explore/ page itself stays: it is also Instagram's search page, and only
- * its recommendation grid is hidden (see hide-rules.ts).
+ * Pages under /explore/ such as places and suggested people. The /explore/
+ * page itself stays: it is also Instagram's search page, and only its
+ * recommendation grid is hidden (see hide-rules.ts).
+ *
+ * Unfinished: Instagram now answers hashtag pages (/explore/tags/...) with a
+ * keyword search page (/explore/search/keyword/?q=%23tag), which this lets
+ * through, so hashtag grids stay visible. See https://github.com/lpedenon/control-feed/issues/2
  */
 const EXPLORE_BROWSING = /^\/explore\/(?!search(\/|$))[^/]+/;
 const FOLLOWING_VARIANT = 'following';
