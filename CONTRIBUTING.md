@@ -4,6 +4,14 @@ Thanks for helping. The most valuable contributions are usually small: a
 selector that stopped matching after YouTube changed its layout, or a new
 distraction worth hiding.
 
+## Unfinished work
+
+**Instagram support is unfinished.** Hashtag pages get through, and only the
+desktop layout in English has been checked. Issue
+[#2](https://github.com/lpedenon/control-feed/issues/2) lists what works, what
+does not, what was never tested and where to start. The failing case is kept
+as a `test.fixme` in `e2e/instagram.live.spec.ts`.
+
 ## Set up
 
 You need Node.js 22.18 or newer and [pnpm](https://pnpm.io).

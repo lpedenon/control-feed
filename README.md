@@ -26,12 +26,15 @@ words you pick, so what's left is what you came for.
   - **Allowed channels** are never hidden by blocked words. Turn on *Only show
     videos from allowed channels* and nothing else shows at all.
 
-**Instagram** (early support)
+**Instagram** (unfinished)
 
 - Opens the Following feed (people you follow, newest first) instead of the
   suggested feed.
-- Hides Reels, the grid of recommended posts under Search, and suggested
-  accounts. Search, messages and reels someone sends you still work.
+- Hides Reels, the grid of recommended posts under Search, place pages and
+  suggested accounts. Search, messages and reels someone sends you still work.
+- **Not done yet:** hashtag pages still show a grid of posts from anyone, and
+  only the desktop layout in English has been checked. What is left is tracked
+  in [#2](https://github.com/lpedenon/control-feed/issues/2).
 
 Every setting is a switch, and changes apply to open tabs right away.
 
@@ -83,7 +86,8 @@ channels** and turn on **Only show videos from allowed channels**.
 - YouTube and Instagram change their pages from time to time, which can let
   something slip through. If it does, please
   [open an issue](https://github.com/lpedenon/control-feed/issues/new/choose).
-- Instagram support is newer and less tested than YouTube.
+- Instagram support is unfinished (see above). You can switch it off in the
+  settings and keep only YouTube.
 
 ## Privacy
 
