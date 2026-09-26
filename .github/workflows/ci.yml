@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, lint, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests with coverage
+        run: pnpm test:coverage
+
+      - name: Build for Chrome and Firefox
+        run: pnpm build && pnpm build:firefox
+
+      - name: Install Chromium for end-to-end tests
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Captured pages only: the live suites hit youtube.com and instagram.com,
+      # which throttle CI machines, so they run locally before a release.
+      - name: End-to-end tests
+        run: pnpm exec playwright test --project=fixtures
+
+      - name: Keep test traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-results
+          path: test-results
+          retention-days: 7
