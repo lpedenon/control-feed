@@ -2,7 +2,7 @@
   "name": "control-feed",
   "description": "Hide Shorts, Reels, recommendations and anything else you did not choose to see on YouTube and Instagram.",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "author": "lpedenon",
   "homepage": "https://github.com/lpedenon/control-feed#readme",
