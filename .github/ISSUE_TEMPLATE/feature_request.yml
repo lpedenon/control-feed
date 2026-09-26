@@ -1,0 +1,16 @@
+name: Idea or request
+description: Something else you would like to hide, filter or control.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What pulls you in or gets in the way?
+      description: Describe the distraction or the missing control, and where it shows up.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How would you like Control Feed to handle it?

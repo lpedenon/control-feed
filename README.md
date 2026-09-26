@@ -1,90 +1,103 @@
 # Control Feed
 
-A browser extension that lets you decide what you see on YouTube and Instagram.
-It removes the endless-scroll surfaces (Shorts, Reels, recommendations, the
-home feed) and filters videos by the channels and words you choose.
+[![CI](https://github.com/lpedenon/control-feed/actions/workflows/ci.yml/badge.svg)](https://github.com/lpedenon/control-feed/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/lpedenon/control-feed)](https://github.com/lpedenon/control-feed/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+Choose what you see on YouTube and Instagram. Control Feed removes the
+endless-scroll surfaces built to keep you watching, such as Shorts, Reels,
+recommendations and the home feed. It also filters videos by the channels and
+words you pick, so what's left is what you came for.
+
+![YouTube's home page with the feed replaced by a short message](docs/images/youtube-home.png)
 
 ## What it does
 
 **YouTube**
 
-- Hides the home feed, Shorts, Explore/Trending, the recommendations next to
-  the player, end-of-video suggestions and (optionally) comments.
+- Hides the home feed, Shorts, Explore and Trending, the recommendations next to
+  the video, and end-of-video suggestions. Comments can be hidden too.
 - Opens any Shorts link in the regular player.
-- Filters videos everywhere (home, search, next to videos, channel pages) by:
-  - **Blocked channels**: never shown.
-  - **Blocked words in titles**: whole-word, case- and accent-insensitive.
-  - **Allowed channels**: never hidden by blocked words. With
-    *Only show videos from allowed channels* on, nothing else is shown.
+- Filters videos on the home page, in search, next to videos and on channel
+  pages:
+  - **Blocked channels** never show.
+  - **Blocked words** hide videos whose title contains them, as whole words, in
+    any capitalization.
+  - **Allowed channels** are never hidden by blocked words. Turn on *Only show
+    videos from allowed channels* and nothing else shows at all.
 
-**Instagram**
+**Instagram** (early support)
 
-- Opens the Following feed (accounts you follow, newest first) instead of the
-  suggested home feed.
-- Hides Reels and Explore, sending those pages back to your feed. Search and
-  reels someone sends you still work.
-- Hides suggested accounts.
+- Opens the Following feed (people you follow, newest first) instead of the
+  suggested feed.
+- Hides Reels, the grid of recommended posts under Search, and suggested
+  accounts. Search, messages and reels someone sends you still work.
 
-Every switch applies to open tabs immediately.
+Every setting is a switch, and changes apply to open tabs right away.
+
+<img src="docs/images/settings.png" alt="The Control Feed settings page" width="560">
 
 ## Install
 
-```bash
-pnpm install
-pnpm build
-```
+Control Feed is not in the Chrome Web Store or Firefox Add-ons yet. Install it
+from a release.
 
-Then in Chrome, Arc or Brave open `chrome://extensions`, turn on
-**Developer mode**, click **Load unpacked** and pick `.output/chrome-mv3`.
-Click the extension icon to open the settings.
+### Chrome, Edge, Brave, Arc and other Chromium browsers
 
-For Firefox: `pnpm build:firefox`, then load `.output/firefox-mv2/manifest.json`
-from `about:debugging`.
+1. Download `control-feed-<version>-chrome.zip` from the
+   [latest release](https://github.com/lpedenon/control-feed/releases/latest)
+   and unzip it.
+2. Open `chrome://extensions` (in Edge, `edge://extensions`).
+3. Turn on **Developer mode**.
+4. Click **Load unpacked** and pick the unzipped folder.
 
-## Develop
+Keep that folder, because the browser loads the extension from it. To update,
+replace the folder's contents with a newer release and click the reload icon on
+the extension's card.
 
-| Command | What it does |
-| --- | --- |
-| `pnpm dev` | Opens a browser with the extension, reloading on change |
-| `pnpm check` | Typecheck, lint and unit tests |
-| `pnpm test:coverage` | Unit tests with coverage (80% minimum) |
-| `pnpm test:e2e` | Builds, then runs the extension in Chromium against captured pages |
-| `pnpm test:live` | Builds, then runs the extension against the real sites |
+### Firefox
 
-## How it works
+Firefox only installs add-ons permanently once Mozilla has signed them, which
+happens when they are published on Firefox Add-ons. Until then you can try it
+for one session:
 
-```
-src/
-  core/            site-independent engine
-    features.ts      every switch the extension offers (the options page renders from it)
-    settings.ts      settings shape, defaults, validation, immutable updates
-    stylesheet.ts    settings -> CSS that hides things before they paint
-    tile-filter.ts   watches the page and marks tiles your filters reject
-    site-runner.ts   ties styles, redirects and filtering together per site
-  sites/youtube/   hide rules, redirects, tile parsing and filter policy
-  sites/instagram/ hide rules and redirects
-  options/         settings page
-  entrypoints/     content scripts, background worker, options page
-```
+1. Download `control-feed-<version>-firefox.zip` from the
+   [latest release](https://github.com/lpedenon/control-feed/releases/latest).
+2. Open `about:debugging#/runtime/this-firefox`, click **Load Temporary
+   Add-on…** and pick the zip.
 
-Hiding is done with CSS injected at `document_start`, so hidden content never
-flashes on screen. Defaults apply instantly and your stored settings replace
-them a few milliseconds later. Filtering reads each video tile's title and
-channel, marks rejected tiles with a `data-control-feed-hidden` attribute
-(its value says why) and lets the stylesheet hide them.
+It stays installed until you restart Firefox.
 
-## When a site changes its layout
+## Use it
 
-Sites rename their markup from time to time. Selectors avoid generated class
-names and rely on tag names, link targets and accessibility labels, which are
-more stable, but they can still break. To update:
+Click the Control Feed icon in the toolbar to open its settings. Everything is on
+by default except hiding comments.
 
-1. `node e2e/tools/capture-youtube-fixtures.ts` saves fresh page snapshots to
-   `e2e/fixtures/youtube/`.
-2. `pnpm test` and `pnpm test:e2e` show what no longer matches.
-3. `pnpm test:live` confirms the fix against the real site. Screenshots land
-   in `.screens/` for a visual check.
+For a learning-only YouTube, add the channels you learn from under **Allowed
+channels** and turn on **Only show videos from allowed channels**.
 
-Live Instagram tests need a logged-in session: run
-`node e2e/tools/instagram-login.ts` once and log in in the window that opens.
-The session stays in `e2e/.auth/` (git-ignored).
+## Good to know
+
+- It works in desktop browsers. The YouTube and Instagram phone apps are not
+  affected.
+- YouTube and Instagram change their pages from time to time, which can let
+  something slip through. If it does, please
+  [open an issue](https://github.com/lpedenon/control-feed/issues/new/choose).
+- Instagram support is newer and less tested than YouTube.
+
+## Privacy
+
+Control Feed collects nothing and makes no network requests. Your settings stay
+in your browser. See [PRIVACY.md](PRIVACY.md).
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md)
+explains how to build it, run the tests and fix a page after a site changes.
+
+To build from source: `pnpm install && pnpm build`, then load
+`.output/chrome-mv3` as described above.
+
+## License
+
+[MIT](LICENSE) © lpedenon

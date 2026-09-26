@@ -1,0 +1,48 @@
+name: Something slipped through or broke
+description: Content that should be hidden is showing, or a page looks or works wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        YouTube and Instagram change their pages often, which can let hidden things back in.
+        The details below make it quick to find and fix.
+  - type: dropdown
+    id: site
+    attributes:
+      label: Where
+      options:
+        - YouTube
+        - Instagram
+        - Control Feed settings page
+        - Somewhere else
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Page address
+      description: The URL of the page where it happened. Remove anything private.
+      placeholder: https://www.youtube.com/results?search_query=...
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you see, and which setting should have hidden it? A screenshot helps a lot.
+    validations:
+      required: true
+  - type: input
+    id: extension-version
+    attributes:
+      label: Control Feed version
+      description: Shown on the extension's card in chrome://extensions or about:addons.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Chrome 140 on macOS
+    validations:
+      required: true
