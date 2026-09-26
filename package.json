@@ -3,6 +3,16 @@
   "description": "Hide Shorts, Reels, recommendations and anything else you did not choose to see on YouTube and Instagram.",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
+  "author": "lpedenon",
+  "homepage": "https://github.com/lpedenon/control-feed#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lpedenon/control-feed.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lpedenon/control-feed/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -35,5 +45,9 @@
     "vite": "^8.3.1",
     "vitest": "^5.0.1",
     "wxt": "^0.21.4"
+  },
+  "packageManager": "pnpm@11.3.0",
+  "engines": {
+    "node": ">=22.18"
   }
 }
