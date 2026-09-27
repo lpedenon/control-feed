@@ -64,4 +64,67 @@ describe('createYoutubeDecider', () => {
     );
     expect(decide?.(video('Anything', 'Veritasium'))).toBe('blocked-channel');
   });
+
+  describe('topics', () => {
+    const ai = { name: 'AI', keywords: ['AI', 'machine learning'] };
+    const gaming = { name: 'Gaming', keywords: ['gaming', 'Minecraft'] };
+
+    it('stays off when topics are off or block mode has no words', () => {
+      expect(createYoutubeDecider(filters({ topics: [ai] }))).toBeNull();
+      expect(
+        createYoutubeDecider(
+          filters({ topicMode: 'block', topics: [{ name: 'Empty', keywords: [] }] }),
+        ),
+      ).toBeNull();
+    });
+
+    it('in block mode, hides videos about the topics', () => {
+      const decide = createYoutubeDecider(filters({ topicMode: 'block', topics: [gaming] }));
+      expect(decide?.(video('Minecraft: 100 days', 'Someone'))).toBe('blocked-topic');
+      expect(decide?.(video('Eigenvectors explained', 'Someone'))).toBeNull();
+      expect(decide?.(null)).toBeNull();
+    });
+
+    it('in only mode, hides everything that is not about the topics', () => {
+      const decide = createYoutubeDecider(filters({ topicMode: 'only', topics: [ai, gaming] }));
+      expect(decide?.(video('Machine Learning, explained', 'Someone'))).toBeNull();
+      expect(decide?.(video('Minecraft speedrun', 'Someone'))).toBeNull();
+      expect(decide?.(video('Cats being cats', 'Someone'))).toBe('off-topic');
+      expect(decide?.(null)).toBe('off-topic');
+    });
+
+    it('in only mode with no words, hides everything', () => {
+      const decide = createYoutubeDecider(filters({ topicMode: 'only' }));
+      expect(decide?.(video('AI news', 'Someone'))).toBe('off-topic');
+    });
+
+    it('lets allowed channels through and keeps blocked channels and words first', () => {
+      const decide = createYoutubeDecider(
+        filters({
+          topicMode: 'only',
+          topics: [ai],
+          allowedChannels: ['3Blue1Brown'],
+          blockedChannels: ['Drama Alert'],
+          blockedKeywords: ['prank'],
+        }),
+      );
+      expect(decide?.(video('Eigenvectors', '3Blue1Brown'))).toBeNull();
+      expect(decide?.(video('AI news', 'Drama Alert'))).toBe('blocked-channel');
+      expect(decide?.(video('AI prank', 'Someone'))).toBe('blocked-keyword');
+    });
+
+    it('with only allowed channels too, shows a video that passes either', () => {
+      const decide = createYoutubeDecider(
+        filters({
+          topicMode: 'only',
+          topics: [ai],
+          onlyAllowedChannels: true,
+          allowedChannels: ['3Blue1Brown'],
+        }),
+      );
+      expect(decide?.(video('Eigenvectors', '3Blue1Brown'))).toBeNull();
+      expect(decide?.(video('AI news', 'Someone'))).toBeNull();
+      expect(decide?.(video('Cats', 'Someone'))).toBe('not-allowed-channel');
+    });
+  });
 });

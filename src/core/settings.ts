@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { FEATURE_KEYS, FEATURES, type FeatureKey, SITES, type Site } from './features';
+import { findPreset, sameTopicName, TOPIC_MODES, type Topic, type TopicMode } from './topics';
 
 export interface YoutubeFilters {
   /** Hide videos whose title contains any of these words or phrases. */
@@ -9,6 +10,9 @@ export interface YoutubeFilters {
   /** Channels always welcome; with `onlyAllowedChannels` the only ones shown. */
   readonly allowedChannels: readonly string[];
   readonly onlyAllowedChannels: boolean;
+  /** Whether `topics` are the only ones shown, are hidden, or are ignored. */
+  readonly topicMode: TopicMode;
+  readonly topics: readonly Topic[];
 }
 
 export interface Settings {
@@ -39,6 +43,25 @@ const listSchema = z
   .transform((items) => normalizeList(items.filter((item) => typeof item === 'string')))
   .catch([]);
 
+function cleanName(value: unknown): string {
+  return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '';
+}
+
+/** Drops topics without a name and keeps the first of any two with the same name. */
+const topicsSchema = z
+  .array(z.unknown())
+  .transform((items): readonly Topic[] => {
+    const topics: Topic[] = [];
+    for (const item of items) {
+      if (!isRecord(item)) continue;
+      const name = cleanName(item.name);
+      if (name === '' || topics.some((topic) => sameTopicName(topic.name, name))) continue;
+      topics.push({ name, keywords: listSchema.parse(item.keywords) });
+    }
+    return topics;
+  })
+  .catch([]);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -60,6 +83,8 @@ const settingsSchema = lenientObject({
     blockedChannels: listSchema,
     allowedChannels: listSchema,
     onlyAllowedChannels: z.boolean().catch(false),
+    topicMode: z.enum(TOPIC_MODES).catch('off'),
+    topics: topicsSchema,
   }),
 });
 
@@ -93,6 +118,37 @@ export function withYoutubeFilters(settings: Settings, patch: Partial<YoutubeFil
   });
 }
 
+/**
+ * Adds a topic by name, starting from the built-in words when there is a
+ * preset with that name and from the name itself otherwise. A name already
+ * on the list is left alone.
+ */
+export function withTopicAdded(settings: Settings, name: string): Settings {
+  const cleaned = cleanName(name);
+  const { topics } = settings.youtubeFilters;
+  if (cleaned === '' || topics.some((topic) => sameTopicName(topic.name, cleaned))) {
+    return settings;
+  }
+  const topic = findPreset(cleaned) ?? { name: cleaned, keywords: [cleaned] };
+  return withYoutubeFilters(settings, { topics: [...topics, topic] });
+}
+
+export function withTopicRemoved(settings: Settings, name: string): Settings {
+  const topics = settings.youtubeFilters.topics.filter((topic) => !sameTopicName(topic.name, name));
+  return withYoutubeFilters(settings, { topics });
+}
+
+export function withTopicKeywords(
+  settings: Settings,
+  name: string,
+  keywords: readonly string[],
+): Settings {
+  const topics = settings.youtubeFilters.topics.map((topic) =>
+    sameTopicName(topic.name, name) ? { ...topic, keywords } : topic,
+  );
+  return withYoutubeFilters(settings, { topics });
+}
+
 const LIST_FIELDS = ['blockedKeywords', 'blockedChannels', 'allowedChannels'] as const;
 
 function sameList(a: readonly string[], b: readonly string[]): boolean {
@@ -105,6 +161,12 @@ export function settingsEqual(a: Settings, b: Settings): boolean {
     SITES.every((site) => a.sites[site] === b.sites[site]) &&
     FEATURE_KEYS.every((key) => a.features[key] === b.features[key]) &&
     a.youtubeFilters.onlyAllowedChannels === b.youtubeFilters.onlyAllowedChannels &&
-    LIST_FIELDS.every((field) => sameList(a.youtubeFilters[field], b.youtubeFilters[field]))
+    LIST_FIELDS.every((field) => sameList(a.youtubeFilters[field], b.youtubeFilters[field])) &&
+    a.youtubeFilters.topicMode === b.youtubeFilters.topicMode &&
+    a.youtubeFilters.topics.length === b.youtubeFilters.topics.length &&
+    a.youtubeFilters.topics.every((topic, index) => {
+      const other = b.youtubeFilters.topics[index];
+      return other?.name === topic.name && sameList(topic.keywords, other.keywords);
+    })
   );
 }

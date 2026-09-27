@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_SETTINGS, type Settings, withFeature } from '../core/settings';
+import {
+  DEFAULT_SETTINGS,
+  type Settings,
+  withFeature,
+  withTopicAdded,
+  withYoutubeFilters,
+} from '../core/settings';
+import { findPreset } from '../core/topics';
 import { LIST_SAVE_DELAY_MS, type SettingsStore, startOptions } from './controller';
 
 function fakeStore(initial: Settings) {
@@ -118,7 +125,7 @@ describe('startOptions', () => {
   it('warns when only allowed channels are wanted but none are listed', async () => {
     const fake = fakeStore(DEFAULT_SETTINGS);
     stop = await startOptions(root, fake.store);
-    const warning = root.querySelector('.warning') as HTMLElement;
+    const warning = document.getElementById('allowlist-warning') as HTMLElement;
     expect(warning.hidden).toBe(true);
     click('only-allowed');
     expect(warning.hidden).toBe(false);
@@ -169,5 +176,102 @@ describe('startOptions', () => {
     stop = undefined;
     await vi.runAllTimersAsync();
     expect(fake.stored().youtubeFilters.blockedChannels).toEqual(['Drama Alert']);
+  });
+
+  describe('topics', () => {
+    function addTopic(name: string): void {
+      input('topic-name').value = name;
+      input('topic-name').form?.requestSubmit();
+    }
+
+    function topicArea(name: string): HTMLTextAreaElement {
+      const label = [...root.querySelectorAll<HTMLLabelElement>('.topic label')].find(
+        (candidate) => candidate.textContent === name,
+      );
+      return document.getElementById(label?.htmlFor ?? '') as HTMLTextAreaElement;
+    }
+
+    it('saves the chosen mode right away', async () => {
+      const fake = fakeStore(DEFAULT_SETTINGS);
+      stop = await startOptions(root, fake.store);
+      expect(input('topic-mode-off').checked).toBe(true);
+      click('topic-mode-block');
+      await vi.runAllTimersAsync();
+      expect(fake.stored().youtubeFilters.topicMode).toBe('block');
+      expect(input('topic-mode-off').checked).toBe(false);
+    });
+
+    it('adds a built-in topic with its words and offers only the rest', async () => {
+      const fake = fakeStore(DEFAULT_SETTINGS);
+      stop = await startOptions(root, fake.store);
+      const offered = () =>
+        [...root.querySelectorAll('#topic-presets option')].map((o) => o.getAttribute('value'));
+      expect(offered()).toContain('AI');
+      addTopic('ai');
+      expect(input('topic-name').value).toBe('');
+      expect(topicArea('AI').value).toBe(findPreset('AI')?.keywords.join('\n'));
+      expect(offered()).not.toContain('AI');
+      await vi.runAllTimersAsync();
+      expect(fake.stored().youtubeFilters.topics).toEqual([findPreset('AI')]);
+    });
+
+    it('saves edited words after a pause and keeps the text being typed', async () => {
+      const fake = fakeStore(withTopicAdded(DEFAULT_SETTINGS, 'Chess'));
+      stop = await startOptions(root, fake.store);
+      const words = topicArea('Chess');
+      words.focus();
+      words.value = 'chess\n  opening ';
+      words.dispatchEvent(new Event('input'));
+      expect(topicArea('Chess')).toBe(words);
+      expect(words.value).toBe('chess\n  opening ');
+      await vi.advanceTimersByTimeAsync(LIST_SAVE_DELAY_MS);
+      expect(fake.stored().youtubeFilters.topics).toEqual([
+        { name: 'Chess', keywords: ['chess', 'opening'] },
+      ]);
+      words.blur();
+      expect(words.value).toBe('chess\nopening');
+    });
+
+    it('removes a topic', async () => {
+      const fake = fakeStore(withTopicAdded(withTopicAdded(DEFAULT_SETTINGS, 'Chess'), 'Go'));
+      stop = await startOptions(root, fake.store);
+      const remove = root.querySelector<HTMLButtonElement>('[aria-label="Remove the topic Chess"]');
+      remove?.click();
+      expect(root.querySelectorAll('.topic')).toHaveLength(1);
+      await vi.runAllTimersAsync();
+      expect(fake.stored().youtubeFilters.topics.map((topic) => topic.name)).toEqual(['Go']);
+    });
+
+    it('keeps typing focus when another tab removes a topic above', async () => {
+      const both = withTopicAdded(withTopicAdded(DEFAULT_SETTINGS, 'Chess'), 'Go');
+      const fake = fakeStore(both);
+      stop = await startOptions(root, fake.store);
+      const words = topicArea('Go');
+      words.focus();
+      fake.pushExternal(withTopicAdded(DEFAULT_SETTINGS, 'Go'));
+      expect(root.querySelectorAll('.topic')).toHaveLength(1);
+      expect(document.activeElement).toBe(words);
+    });
+
+    it('warns when only topics are wanted but none have words', async () => {
+      const fake = fakeStore(DEFAULT_SETTINGS);
+      stop = await startOptions(root, fake.store);
+      const warning = document.getElementById('topics-warning') as HTMLElement;
+      expect(warning.hidden).toBe(true);
+      click('topic-mode-only');
+      expect(warning.hidden).toBe(false);
+      addTopic('Chess');
+      expect(warning.hidden).toBe(true);
+    });
+
+    it('shows topics added in another tab', async () => {
+      const fake = fakeStore(DEFAULT_SETTINGS);
+      stop = await startOptions(root, fake.store);
+      fake.pushExternal(
+        withYoutubeFilters(withTopicAdded(DEFAULT_SETTINGS, 'Gaming'), { topicMode: 'block' }),
+      );
+      expect(input('topic-mode-block').checked).toBe(true);
+      expect(topicArea('Gaming').value).toContain('Minecraft');
+    });
   });
 });
