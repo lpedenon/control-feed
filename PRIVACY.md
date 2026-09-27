@@ -3,7 +3,7 @@
 Control Feed does not collect, send or sell any data.
 
 - **What it stores:** only your settings (which switches are on, and your lists
-  of channels and words). They live in your browser's extension storage on your
+  of channels, words and topics). They live in your browser's extension storage on your
   own device.
 - **What it reads:** on `youtube.com` and `instagram.com` it reads the page you
   are viewing, such as video titles and channel names, to decide what to hide.
