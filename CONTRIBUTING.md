@@ -44,6 +44,7 @@ src/
   core/            site-independent engine
     features.ts      every switch the extension offers (the settings page renders from it)
     settings.ts      settings shape, defaults, validation, immutable updates
+    topics.ts        built-in topics (AI, Gaming…) and the words that recognize them
     stylesheet.ts    settings -> CSS that hides things before they paint
     tile-filter.ts   watches the page and marks tiles your filters reject
     site-runner.ts   ties styles, redirects and filtering together per site

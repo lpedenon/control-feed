@@ -3,6 +3,9 @@ import {
   settingsEqual,
   withFeature,
   withSite,
+  withTopicAdded,
+  withTopicKeywords,
+  withTopicRemoved,
   withYoutubeFilters,
 } from '../core/settings';
 import { createOptionsView, type OptionsView } from './view';
@@ -66,6 +69,11 @@ export async function startOptions(root: HTMLElement, store: SettingsStore): Pro
       change((s) => withYoutubeFilters(s, { onlyAllowedChannels: enabled })),
     onListChange: (field, lines) =>
       change((s) => withYoutubeFilters(s, { [field]: lines }), LIST_SAVE_DELAY_MS),
+    onTopicModeChange: (topicMode) => change((s) => withYoutubeFilters(s, { topicMode })),
+    onTopicAdd: (name) => change((s) => withTopicAdded(s, name)),
+    onTopicRemove: (name) => change((s) => withTopicRemoved(s, name)),
+    onTopicKeywordsChange: (name, lines) =>
+      change((s) => withTopicKeywords(s, name, lines), LIST_SAVE_DELAY_MS),
   });
   view.update(current());
 

@@ -8,8 +8,12 @@ import {
   settingsEqual,
   withFeature,
   withSite,
+  withTopicAdded,
+  withTopicKeywords,
+  withTopicRemoved,
   withYoutubeFilters,
 } from './settings';
+import { findPreset } from './topics';
 
 describe('DEFAULT_SETTINGS', () => {
   it('enables both sites', () => {
@@ -28,6 +32,8 @@ describe('DEFAULT_SETTINGS', () => {
       blockedChannels: [],
       allowedChannels: [],
       onlyAllowedChannels: false,
+      topicMode: 'off',
+      topics: [],
     });
   });
 });
@@ -77,6 +83,79 @@ describe('parseSettings', () => {
   });
 });
 
+describe('parseSettings topics', () => {
+  it('keeps valid topics and cleans their words', () => {
+    const parsed = parseSettings({
+      youtubeFilters: {
+        topicMode: 'only',
+        topics: [{ name: '  Chess ', keywords: [' chess', 'Chess', '', 'opening'] }],
+      },
+    });
+    expect(parsed.youtubeFilters.topicMode).toBe('only');
+    expect(parsed.youtubeFilters.topics).toEqual([
+      { name: 'Chess', keywords: ['chess', 'opening'] },
+    ]);
+  });
+
+  it('drops nameless, malformed and duplicate topics', () => {
+    const parsed = parseSettings({
+      youtubeFilters: {
+        topics: [
+          { name: 'AI', keywords: ['ai'] },
+          { name: 'ai', keywords: ['other'] },
+          { name: '   ', keywords: ['x'] },
+          { keywords: ['y'] },
+          'Gaming',
+          { name: 'Chess', keywords: 'chess' },
+        ],
+      },
+    });
+    expect(parsed.youtubeFilters.topics).toEqual([
+      { name: 'AI', keywords: ['ai'] },
+      { name: 'Chess', keywords: [] },
+    ]);
+  });
+
+  it('falls back to off for an unknown mode', () => {
+    expect(parseSettings({ youtubeFilters: { topicMode: 'most' } }).youtubeFilters.topicMode).toBe(
+      'off',
+    );
+  });
+});
+
+describe('topic updates', () => {
+  it('adds a built-in topic with its words', () => {
+    const next = withTopicAdded(DEFAULT_SETTINGS, 'gaming');
+    expect(next.youtubeFilters.topics).toEqual([findPreset('Gaming')]);
+    expect(DEFAULT_SETTINGS.youtubeFilters.topics).toEqual([]);
+  });
+
+  it('adds a custom topic that starts with its own name as a word', () => {
+    const next = withTopicAdded(DEFAULT_SETTINGS, '  Chess  openings ');
+    expect(next.youtubeFilters.topics).toEqual([
+      { name: 'Chess openings', keywords: ['Chess openings'] },
+    ]);
+  });
+
+  it('ignores blank names and names already on the list', () => {
+    const once = withTopicAdded(DEFAULT_SETTINGS, 'Chess');
+    expect(withTopicAdded(once, 'CHESS')).toBe(once);
+    expect(withTopicAdded(once, '   ')).toBe(once);
+  });
+
+  it('edits and removes one topic by name', () => {
+    const both = withTopicAdded(withTopicAdded(DEFAULT_SETTINGS, 'Chess'), 'Go');
+    const edited = withTopicKeywords(both, 'chess', [' chess', 'Magnus Carlsen', '']);
+    expect(edited.youtubeFilters.topics).toEqual([
+      { name: 'Chess', keywords: ['chess', 'Magnus Carlsen'] },
+      { name: 'Go', keywords: ['Go'] },
+    ]);
+    expect(withTopicRemoved(edited, 'CHESS').youtubeFilters.topics).toEqual([
+      { name: 'Go', keywords: ['Go'] },
+    ]);
+  });
+});
+
 describe('normalizeList', () => {
   it('trims, drops blanks and removes case-insensitive duplicates keeping the first', () => {
     expect(normalizeList(['  Foo', 'bar ', '', '   ', 'FOO', 'Bar'])).toEqual(['Foo', 'bar']);
@@ -111,6 +190,8 @@ describe('immutable updates', () => {
       blockedChannels: [],
       allowedChannels: [],
       onlyAllowedChannels: true,
+      topicMode: 'off',
+      topics: [],
     });
     expect(DEFAULT_SETTINGS.youtubeFilters.onlyAllowedChannels).toBe(false);
   });
@@ -157,5 +238,13 @@ describe('settingsEqual', () => {
         withYoutubeFilters(DEFAULT_SETTINGS, { allowedChannels: ['b', 'a'] }),
       ),
     ).toBe(false);
+    expect(
+      settingsEqual(withYoutubeFilters(DEFAULT_SETTINGS, { topicMode: 'block' }), DEFAULT_SETTINGS),
+    ).toBe(false);
+    const chess = withTopicAdded(DEFAULT_SETTINGS, 'Chess');
+    expect(settingsEqual(chess, DEFAULT_SETTINGS)).toBe(false);
+    expect(settingsEqual(withTopicKeywords(chess, 'Chess', ['chess', 'go']), chess)).toBe(false);
+    expect(settingsEqual(withTopicAdded(DEFAULT_SETTINGS, 'Go'), chess)).toBe(false);
+    expect(settingsEqual(parseSettings(JSON.parse(JSON.stringify(chess))), chess)).toBe(true);
   });
 });

@@ -25,6 +25,10 @@ words you pick, so what's left is what you came for.
     any capitalization.
   - **Allowed channels** are never hidden by blocked words. Turn on *Only show
     videos from allowed channels* and nothing else shows at all.
+  - **Topics** such as AI, Gaming or Sports: either show *only* videos about
+    the topics you pick, or hide videos about them. A topic is a list of words
+    looked for in video titles. Common topics come with a starter list you can
+    edit, and you can make your own.
 
 **Instagram** (unfinished)
 
@@ -78,6 +82,13 @@ by default except hiding comments.
 
 For a learning-only YouTube, add the channels you learn from under **Allowed
 channels** and turn on **Only show videos from allowed channels**.
+
+To watch only one kind of video, say AI, add the **AI** topic under **Topics**
+and choose **Only show videos about these topics**. To keep a topic away
+instead, such as gaming, add it and choose **Hide videos about these topics**.
+Topics go by the words in video titles, so add any word your topic's videos use
+that the list is missing. Channels you allow always show, whatever their titles
+say.
 
 ## Good to know
 

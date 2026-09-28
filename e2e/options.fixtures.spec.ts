@@ -82,6 +82,45 @@ test('typing a blocked word filters an open search tab', async ({ context, exten
   ).toBeHidden();
 });
 
+test('adding a topic and choosing only it filters an open search tab', async ({
+  context,
+  extensionId,
+}) => {
+  const search = await openYoutube(context, '/results?search_query=linear+algebra');
+  const options = await openOptions(context, extensionId);
+
+  await options.getByRole('radio', { name: /Only show videos about these topics/ }).check();
+  await expect(options.getByText('Add a topic and give it')).toBeVisible();
+  await options.getByLabel('Add a topic').fill('AI');
+  await options.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(options.getByLabel('AI', { exact: true })).toHaveValue(/machine learning/);
+  await expect(options.getByText('Add a topic and give it')).toBeHidden();
+  await options.getByLabel('Add a topic').fill('Linear algebra');
+  await options.getByLabel('Add a topic').press('Enter');
+  await expect(options.getByLabel('Linear algebra', { exact: true })).toHaveValue('Linear algebra');
+  await expect(options.getByRole('status')).toContainText('Saved');
+  await options.screenshot({
+    path: join(SCREENS, 'topics.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+  await options.emulateMedia({ colorScheme: 'dark' });
+  await options.screenshot({
+    path: join(SCREENS, 'topics-dark.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
+
+  // Nearly every fixture result says "linear algebra"; without that topic, none shows.
+  const visibleResults = () =>
+    search
+      .locator('ytd-video-renderer')
+      .evaluateAll((elements) => elements.filter((e) => e.checkVisibility()).length);
+  await expect.poll(visibleResults).toBeGreaterThan(5);
+  await options.getByRole('button', { name: 'Remove the topic Linear algebra' }).click();
+  await expect.poll(visibleResults).toBe(0);
+});
+
 test('the allowlist warning appears until a channel is added', async ({ context, extensionId }) => {
   const options = await openOptions(context, extensionId);
   const warning = options.getByText('Add at least one allowed channel');

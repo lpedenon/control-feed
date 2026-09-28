@@ -105,6 +105,42 @@ test.describe('search', () => {
   });
 });
 
+test.describe('topics', () => {
+  const series = { name: 'Essence series', keywords: ['essence'] };
+
+  test('hides results about a blocked topic', async ({ page, setSettings }) => {
+    await setSettings(
+      withYoutubeFilters(DEFAULT_SETTINGS, { topicMode: 'block', topics: [series] }),
+    );
+    await openPage(page, '/results?search_query=linear+algebra');
+    const hidden = page.locator(`ytd-video-renderer[${HIDDEN_ATTRIBUTE}="blocked-topic"]`);
+    await expect(hidden.first()).toBeAttached();
+    await expect(hidden.first()).toBeHidden();
+    const visibleTitles = await page
+      .locator('ytd-video-renderer #video-title')
+      .evaluateAll((elements) =>
+        elements.filter((e) => e.checkVisibility()).map((e) => e.textContent ?? ''),
+      );
+    expect(visibleTitles.length).toBeGreaterThan(3);
+    for (const title of visibleTitles) expect(title.toLowerCase()).not.toContain('essence');
+  });
+
+  test('with only these topics, shows nothing else', async ({ page, setSettings }) => {
+    await setSettings(
+      withYoutubeFilters(DEFAULT_SETTINGS, { topicMode: 'only', topics: [series] }),
+    );
+    await openPage(page, '/results?search_query=linear+algebra');
+    await expect(page.locator(`[${HIDDEN_ATTRIBUTE}="off-topic"]`).first()).toBeAttached();
+    const visibleTitles = await page
+      .locator('ytd-video-renderer #video-title')
+      .evaluateAll((elements) =>
+        elements.filter((e) => e.checkVisibility()).map((e) => e.textContent ?? ''),
+      );
+    expect(visibleTitles.length).toBeGreaterThan(0);
+    for (const title of visibleTitles) expect(title.toLowerCase()).toContain('essence');
+  });
+});
+
 test.describe('watch page', () => {
   test('hides recommendations and keeps comments by default', async ({ page, setSettings }) => {
     await setSettings(DEFAULT_SETTINGS);
