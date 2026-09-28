@@ -13,4 +13,4 @@ No Brainrot does not collect, send or sell any data.
 - **Permissions:** `storage`, to keep your settings. Access to `youtube.com` and
   `instagram.com` pages, to hide content on them. Nothing else.
 
-Questions: open an issue at https://github.com/lpedenon/control-feed/issues.
+Questions: open an issue at https://github.com/lpedenon/no-brainrot/issues.

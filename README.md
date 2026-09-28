@@ -7,8 +7,8 @@
 <p align="center"><strong>Take back your attention on YouTube and Instagram.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/lpedenon/control-feed/actions/workflows/ci.yml"><img src="https://github.com/lpedenon/control-feed/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/lpedenon/control-feed/releases/latest"><img src="https://img.shields.io/github/v/release/lpedenon/control-feed" alt="Latest release"></a>
+  <a href="https://github.com/lpedenon/no-brainrot/actions/workflows/ci.yml"><img src="https://github.com/lpedenon/no-brainrot/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/lpedenon/no-brainrot/releases/latest"><img src="https://img.shields.io/github/v/release/lpedenon/no-brainrot" alt="Latest release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
 </p>
 
@@ -54,7 +54,7 @@ the rest, so you get the video you came for, not the next hour of scrolling.
   suggested accounts. Search, messages and reels someone sends you still work.
 - **Not done yet:** hashtag pages still show a grid of posts from anyone, and
   only the desktop layout in English has been checked. What is left is tracked
-  in [#2](https://github.com/lpedenon/control-feed/issues/2).
+  in [#2](https://github.com/lpedenon/no-brainrot/issues/2).
 
 <img src="docs/images/settings.png" alt="The No Brainrot settings page" width="560">
 
@@ -66,7 +66,7 @@ from a release.
 ### Chrome, Edge, Brave, Arc and other Chromium browsers
 
 1. Download the file ending in `-chrome.zip` from the
-   [latest release](https://github.com/lpedenon/control-feed/releases/latest)
+   [latest release](https://github.com/lpedenon/no-brainrot/releases/latest)
    and unzip it.
 2. Open `chrome://extensions` (in Edge, `edge://extensions`).
 3. Turn on **Developer mode**.
@@ -83,7 +83,7 @@ happens when they are published on Firefox Add-ons. Until then you can try it
 for one session:
 
 1. Download the file ending in `-firefox.zip` from the
-   [latest release](https://github.com/lpedenon/control-feed/releases/latest).
+   [latest release](https://github.com/lpedenon/no-brainrot/releases/latest).
 2. Open `about:debugging#/runtime/this-firefox`, click **Load Temporary
    Add-on…** and pick the zip.
 
@@ -110,7 +110,7 @@ say.
   affected.
 - YouTube and Instagram change their pages from time to time, which can let
   something slip through. If it does, please
-  [open an issue](https://github.com/lpedenon/control-feed/issues/new/choose).
+  [open an issue](https://github.com/lpedenon/no-brainrot/issues/new/choose).
 - Instagram support is unfinished (see above). You can switch it off in the
   settings and keep only YouTube.
 

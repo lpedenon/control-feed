@@ -15,7 +15,7 @@ export interface SiteNote {
 export const SITE_NOTES: Readonly<Partial<Record<Site, SiteNote>>> = {
   instagram: {
     text: 'Unfinished: hashtag pages still show posts from anyone, and only the desktop layout has been checked.',
-    link: { label: 'Details', url: 'https://github.com/lpedenon/control-feed/issues/2' },
+    link: { label: 'Details', url: 'https://github.com/lpedenon/no-brainrot/issues/2' },
   },
 };
 

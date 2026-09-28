@@ -3,7 +3,7 @@
 ## Reporting a problem
 
 Please report security problems privately through
-[GitHub's private vulnerability reporting](https://github.com/lpedenon/control-feed/security/advisories/new),
+[GitHub's private vulnerability reporting](https://github.com/lpedenon/no-brainrot/security/advisories/new),
 not in a public issue. You will get a reply within a week.
 
 ## Supported versions

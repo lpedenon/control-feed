@@ -8,7 +8,7 @@ distraction worth hiding.
 
 **Instagram support is unfinished.** Hashtag pages get through, and only the
 desktop layout in English has been checked. Issue
-[#2](https://github.com/lpedenon/control-feed/issues/2) lists what works, what
+[#2](https://github.com/lpedenon/no-brainrot/issues/2) lists what works, what
 does not, what was never tested and where to start. The failing case is kept
 as a `test.fixme` in `e2e/instagram.live.spec.ts`.
 

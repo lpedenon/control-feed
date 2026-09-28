@@ -5,7 +5,7 @@ import { instagramPage, instagramRedirect } from './redirects';
 /**
  * Instagram support is unfinished: hashtag grids get through, and only the
  * desktop layout in English has been checked. What works, what does not and
- * where to start: https://github.com/lpedenon/control-feed/issues/2
+ * where to start: https://github.com/lpedenon/no-brainrot/issues/2
  */
 export const instagramSite: SiteDefinition<never> = {
   site: 'instagram',

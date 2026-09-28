@@ -8,7 +8,7 @@ const REELS_FEED = /^\/reels(\/|$)/;
  *
  * Unfinished: Instagram now answers hashtag pages (/explore/tags/...) with a
  * keyword search page (/explore/search/keyword/?q=%23tag), which this lets
- * through, so hashtag grids stay visible. See https://github.com/lpedenon/control-feed/issues/2
+ * through, so hashtag grids stay visible. See https://github.com/lpedenon/no-brainrot/issues/2
  */
 const EXPLORE_BROWSING = /^\/explore\/(?!search(\/|$))[^/]+/;
 const FOLLOWING_VARIANT = 'following';

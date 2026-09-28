@@ -5,13 +5,13 @@
   "version": "0.1.1",
   "license": "MIT",
   "author": "lpedenon",
-  "homepage": "https://github.com/lpedenon/control-feed#readme",
+  "homepage": "https://github.com/lpedenon/no-brainrot#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lpedenon/control-feed.git"
+    "url": "git+https://github.com/lpedenon/no-brainrot.git"
   },
   "bugs": {
-    "url": "https://github.com/lpedenon/control-feed/issues"
+    "url": "https://github.com/lpedenon/no-brainrot/issues"
   },
   "type": "module",
   "scripts": {

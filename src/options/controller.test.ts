@@ -76,7 +76,7 @@ describe('startOptions', () => {
     const note = instagram?.querySelector('.site-note');
     expect(note?.textContent).toContain('Unfinished');
     expect(note?.querySelector('a')?.getAttribute('href')).toBe(
-      'https://github.com/lpedenon/control-feed/issues/2',
+      'https://github.com/lpedenon/no-brainrot/issues/2',
     );
     expect(input('site-youtube').closest('section')?.querySelector('.site-note')).toBeNull();
   });

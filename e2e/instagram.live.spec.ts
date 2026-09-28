@@ -113,7 +113,7 @@ test('the Reels feed and place pages send you back to the feed', async ({ page, 
   await expect(page).toHaveURL(FOLLOWING);
 });
 
-// Known gap: https://github.com/lpedenon/control-feed/issues/2
+// Known gap: https://github.com/lpedenon/no-brainrot/issues/2
 // Instagram now answers hashtag pages with a keyword search page
 // (/explore/search/keyword/?q=%23travel), a full grid of posts that the
 // extension leaves alone because it is a search page.

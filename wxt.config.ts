@@ -20,7 +20,7 @@ export default defineConfig({
     name: 'No Brainrot',
     description:
       'Take back your attention. Hide Shorts, Reels, recommendations and endless feeds on YouTube and Instagram.',
-    homepage_url: 'https://github.com/lpedenon/control-feed',
+    homepage_url: 'https://github.com/lpedenon/no-brainrot',
     permissions: ['storage'],
     action: {
       default_title: 'No Brainrot settings',
