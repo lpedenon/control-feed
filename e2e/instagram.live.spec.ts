@@ -24,7 +24,7 @@ test.use({ profile: 'instagram' });
 
 async function open(page: Page, url: string): Promise<void> {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#control-feed-style[data-settings="stored"]')).toBeAttached();
+  await expect(page.locator('#no-brainrot-style[data-settings="stored"]')).toBeAttached();
 }
 
 /** Instagram greets new browser profiles with prompts such as "Turn on Notifications". */

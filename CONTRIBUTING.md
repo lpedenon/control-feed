@@ -58,7 +58,7 @@ src/
   flashes on screen. Defaults apply instantly and stored settings replace them
   a few milliseconds later.
 - Filtering reads each video tile's title and channel and marks rejected tiles
-  with a `data-control-feed-hidden` attribute whose value says why. The
+  with a `data-no-brainrot-hidden` attribute whose value says why. The
   stylesheet does the hiding.
 - Settings are never mutated: every change produces a new object.
 

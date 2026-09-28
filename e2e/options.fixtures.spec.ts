@@ -22,12 +22,14 @@ async function openOptions(context: BrowserContext, extensionId: string): Promis
 async function openYoutube(context: BrowserContext, path: string): Promise<Page> {
   const page = await context.newPage();
   await page.goto(`https://www.youtube.com${path}`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#control-feed-style[data-settings="stored"]')).toBeAttached();
+  await expect(page.locator('#no-brainrot-style[data-settings="stored"]')).toBeAttached();
   return page;
 }
 
 test('shows every setting with its current value', async ({ context, extensionId }) => {
   const options = await openOptions(context, extensionId);
+  await expect(options).toHaveTitle('No Brainrot settings');
+  await expect(options.getByRole('heading', { level: 1 })).toHaveText('No Brainrot');
   await expect(options.getByRole('switch', { name: /Hide Shorts/ })).toBeChecked();
   await expect(options.getByRole('switch', { name: /Hide comments/ })).not.toBeChecked();
   await expect(

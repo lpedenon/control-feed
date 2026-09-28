@@ -13,7 +13,7 @@ async function main(): Promise<void> {
     // Flush an edit still waiting to be saved when the tab closes.
     window.addEventListener('pagehide', stop, { once: true });
   } catch (error) {
-    console.error('[Control Feed] Settings page failed to start.', error);
+    console.error('[No Brainrot] Settings page failed to start.', error);
     root.textContent = 'Could not load your settings. Try reloading this page.';
   } finally {
     root.removeAttribute('aria-busy');

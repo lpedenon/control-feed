@@ -30,7 +30,7 @@ export interface SiteRunner {
   stop(): void;
 }
 
-export const STYLE_ELEMENT_ID = 'control-feed-style';
+export const STYLE_ELEMENT_ID = 'no-brainrot-style';
 
 /**
  * Starts the extension on a page. Styles for the default settings go in

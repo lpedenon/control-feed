@@ -13,7 +13,7 @@ test.beforeEach(async ({ context }) => {
 /** Waits until the extension has applied the stored settings to the page. */
 async function openPage(page: Page, path: string): Promise<void> {
   await page.goto(`${YT}${path}`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#control-feed-style[data-settings="stored"]')).toBeAttached();
+  await expect(page.locator('#no-brainrot-style[data-settings="stored"]')).toBeAttached();
 }
 
 async function visibleCount(page: Page, selector: string): Promise<number> {

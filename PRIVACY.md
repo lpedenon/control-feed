@@ -1,6 +1,6 @@
 # Privacy
 
-Control Feed does not collect, send or sell any data.
+No Brainrot does not collect, send or sell any data.
 
 - **What it stores:** only your settings (which switches are on, and your lists
   of channels, words and topics). They live in your browser's extension storage on your

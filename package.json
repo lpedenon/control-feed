@@ -1,6 +1,6 @@
 {
-  "name": "control-feed",
-  "description": "Hide Shorts, Reels, recommendations and anything else you did not choose to see on YouTube and Instagram.",
+  "name": "no-brainrot",
+  "description": "Take back your attention. Hide Shorts, Reels, recommendations and endless feeds on YouTube and Instagram.",
   "private": true,
   "version": "0.1.1",
   "license": "MIT",

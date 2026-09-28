@@ -15,7 +15,7 @@ export async function runSite<Info>(
     runner.apply(await loadSettings());
   } catch (error) {
     // Keep protecting the page with defaults rather than showing everything.
-    console.error('[Control Feed] Could not read settings; using defaults.', error);
+    console.error('[No Brainrot] Could not read settings; using defaults.', error);
     runner.apply(DEFAULT_SETTINGS);
   }
 

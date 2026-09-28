@@ -51,6 +51,6 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" \
             .output/*-chrome.zip .output/*-firefox.zip \
-            --title "Control Feed $GITHUB_REF_NAME" \
+            --title "No Brainrot $GITHUB_REF_NAME" \
             --notes-from-tag \
             --verify-tag

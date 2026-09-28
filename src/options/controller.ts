@@ -50,7 +50,7 @@ export async function startOptions(root: HTMLElement, store: SettingsStore): Pro
       await store.save(next);
       view?.setStatus('saved', 'Saved. Open tabs update right away.');
     } catch (error) {
-      console.error('[Control Feed] Saving settings failed.', error);
+      console.error('[No Brainrot] Saving settings failed.', error);
       view?.setStatus('error', `Could not save your changes: ${describeError(error)}`);
     }
   };

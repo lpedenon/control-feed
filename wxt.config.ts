@@ -17,19 +17,19 @@ export default defineConfig({
     ],
   },
   manifest: ({ browser }) => ({
-    name: 'Control Feed',
+    name: 'No Brainrot',
     description:
-      'Hide Shorts, Reels, recommendations and anything else you did not choose to see on YouTube and Instagram.',
+      'Take back your attention. Hide Shorts, Reels, recommendations and endless feeds on YouTube and Instagram.',
     homepage_url: 'https://github.com/lpedenon/control-feed',
     permissions: ['storage'],
     action: {
-      default_title: 'Control Feed settings',
+      default_title: 'No Brainrot settings',
     },
     ...(browser === 'firefox'
       ? {
           browser_specific_settings: {
             gecko: {
-              id: 'control-feed@extension',
+              id: 'no-brainrot@extension',
               // Settings stay in the browser; nothing is collected or sent.
               data_collection_permissions: { required: ['none'] },
             },

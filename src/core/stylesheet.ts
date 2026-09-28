@@ -2,10 +2,10 @@ import type { FeatureKey } from './features';
 import { isFeatureActive, type Settings } from './settings';
 
 /** Set on elements the tile filter decided to hide; the value says why. */
-export const HIDDEN_ATTRIBUTE = 'data-control-feed-hidden';
+export const HIDDEN_ATTRIBUTE = 'data-no-brainrot-hidden';
 
 /** Set on the root element to name the current page, for rules that apply to one page. */
-export const PAGE_ATTRIBUTE = 'data-control-feed-page';
+export const PAGE_ATTRIBUTE = 'data-no-brainrot-page';
 
 export interface HideRule {
   readonly feature: FeatureKey;

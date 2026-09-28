@@ -16,7 +16,7 @@ export async function copyInstagramProfile(): Promise<{
   dir: string;
   cleanup: () => Promise<void>;
 }> {
-  const dir = await mkdtemp(join(tmpdir(), 'control-feed-ig-'));
+  const dir = await mkdtemp(join(tmpdir(), 'no-brainrot-ig-'));
   await cp(INSTAGRAM_PROFILE_DIR, dir, {
     recursive: true,
     // Lock files belong to a running browser and must not be copied.

@@ -1,13 +1,29 @@
-# Control Feed
+<p align="center">
+  <img src="assets/icon.svg" alt="No Brainrot logo: a melting brain under a no sign" width="112">
+</p>
 
-[![CI](https://github.com/lpedenon/control-feed/actions/workflows/ci.yml/badge.svg)](https://github.com/lpedenon/control-feed/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/lpedenon/control-feed)](https://github.com/lpedenon/control-feed/releases/latest)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+<h1 align="center">No Brainrot</h1>
 
-Choose what you see on YouTube and Instagram. Control Feed removes the
-endless-scroll surfaces built to keep you watching, such as Shorts, Reels,
-recommendations and the home feed. It also filters videos by the channels and
-words you pick, so what's left is what you came for.
+<p align="center"><strong>Take back your attention on YouTube and Instagram.</strong></p>
+
+<p align="center">
+  <a href="https://github.com/lpedenon/control-feed/actions/workflows/ci.yml"><img src="https://github.com/lpedenon/control-feed/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/lpedenon/control-feed/releases/latest"><img src="https://img.shields.io/github/v/release/lpedenon/control-feed" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
+</p>
+
+No Brainrot is a free browser extension that removes the parts of YouTube and
+Instagram built to keep you scrolling: Shorts, Reels, recommendations and the
+endless home feed. Pick the channels and topics you care about and filter out
+the rest, so you get the video you came for, not the next hour of scrolling.
+
+- **Stop the scroll.** Shorts, Reels, the home feed and "up next" suggestions
+  disappear.
+- **See only what you pick.** Block channels and words, or allow only the
+  channels you learn from.
+- **Instant.** Every setting is a switch, and open tabs update right away.
+- **Private.** No account and no tracking. Nothing leaves your browser.
+- **Free and open source.** MIT licensed.
 
 ![YouTube's home page with the feed replaced by a short message](docs/images/youtube-home.png)
 
@@ -40,18 +56,16 @@ words you pick, so what's left is what you came for.
   only the desktop layout in English has been checked. What is left is tracked
   in [#2](https://github.com/lpedenon/control-feed/issues/2).
 
-Every setting is a switch, and changes apply to open tabs right away.
-
-<img src="docs/images/settings.png" alt="The Control Feed settings page" width="560">
+<img src="docs/images/settings.png" alt="The No Brainrot settings page" width="560">
 
 ## Install
 
-Control Feed is not in the Chrome Web Store or Firefox Add-ons yet. Install it
+No Brainrot is not in the Chrome Web Store or Firefox Add-ons yet. Install it
 from a release.
 
 ### Chrome, Edge, Brave, Arc and other Chromium browsers
 
-1. Download `control-feed-<version>-chrome.zip` from the
+1. Download the file ending in `-chrome.zip` from the
    [latest release](https://github.com/lpedenon/control-feed/releases/latest)
    and unzip it.
 2. Open `chrome://extensions` (in Edge, `edge://extensions`).
@@ -68,7 +82,7 @@ Firefox only installs add-ons permanently once Mozilla has signed them, which
 happens when they are published on Firefox Add-ons. Until then you can try it
 for one session:
 
-1. Download `control-feed-<version>-firefox.zip` from the
+1. Download the file ending in `-firefox.zip` from the
    [latest release](https://github.com/lpedenon/control-feed/releases/latest).
 2. Open `about:debugging#/runtime/this-firefox`, click **Load Temporary
    Add-on…** and pick the zip.
@@ -77,7 +91,7 @@ It stays installed until you restart Firefox.
 
 ## Use it
 
-Click the Control Feed icon in the toolbar to open its settings. Everything is on
+Click the No Brainrot icon in the toolbar to open its settings. Everything is on
 by default except hiding comments.
 
 For a learning-only YouTube, add the channels you learn from under **Allowed
@@ -102,7 +116,7 @@ say.
 
 ## Privacy
 
-Control Feed collects nothing and makes no network requests. Your settings stay
+No Brainrot collects nothing and makes no network requests. Your settings stay
 in your browser. See [PRIVACY.md](PRIVACY.md).
 
 ## Contributing
