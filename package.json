@@ -2,7 +2,7 @@
   "name": "no-brainrot",
   "description": "Take back your attention. Hide Shorts, Reels, recommendations and endless feeds on YouTube and Instagram.",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "MIT",
   "author": "lpedenon",
   "homepage": "https://github.com/lpedenon/no-brainrot#readme",
