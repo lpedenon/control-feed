@@ -1,5 +1,4 @@
-import { execFileSync } from 'node:child_process';
-import { cp, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -263,10 +262,5 @@ describe.skipIf(!onMac)('verifyBuiltApp', () => {
       'The extension has no SafariWebExtensionHandler as its principal class.',
     );
     expect(problems).toContain('The extension bundle id is not inside the app bundle id.');
-  });
-
-  it('has plutil to read plists with', () => {
-    expect(execFileSync('plutil', ['-help'], { stdio: 'pipe' }).length).toBeGreaterThanOrEqual(0);
-    expect(cp).toBeDefined();
   });
 });
