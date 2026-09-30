@@ -46,6 +46,7 @@ public final class AppModel {
     public static let cleanYouTubeURL = URL(string: "https://m.youtube.com/")!
     static let setupSeenKey = "setupSeen"
     static let gateMarkedKey = "gateMarkedSetUp"
+    static let countersKey = "counters.v1"
 
     public private(set) var settings: ExtensionSettings
     public private(set) var status: StatusReport
@@ -53,6 +54,7 @@ public final class AppModel {
     public private(set) var launchFailure: String?
     public private(set) var setupSeen: Bool
     public private(set) var gateMarkedSetUp: Bool
+    public private(set) var counters: LocalCounters
     public var sharedStorageAvailable: Bool { dependencies.sharedStorageAvailable }
 
     @ObservationIgnored private let dependencies: AppDependencies
@@ -64,6 +66,9 @@ public final class AppModel {
         settings = stored.settings
         gateMarkedSetUp = gate
         setupSeen = dependencies.preferences.bool(forKey: Self.setupSeenKey)
+        let saved = dependencies.preferences.data(forKey: Self.countersKey)
+            .flatMap { try? JSONDecoder().decode(LocalCounters.self, from: $0) }
+        counters = saved ?? LocalCounters(since: dependencies.now())
         status = StatusReport.make(
             contact: dependencies.contacts.loadContact(),
             settings: stored,
@@ -71,6 +76,8 @@ public final class AppModel {
             youtubeAppInstalled: dependencies.youtubeAppInstalled(),
             now: dependencies.now()
         )
+        // Saved at once, so the date counting began stays put until something is counted.
+        if saved == nil { saveCounters() }
     }
 
     /// Reads everything again. The extension can adopt newer settings and report
@@ -95,6 +102,7 @@ public final class AppModel {
         do {
             try dependencies.repository.save(next)
             saveFailure = nil
+            count(counters.countingChange(from: settings, to: next))
         } catch {
             saveFailure = "Your change could not be saved. Try again."
         }
@@ -108,7 +116,9 @@ public final class AppModel {
     public func openCleanYouTube() async {
         launchFailure = nil
         let opened = await dependencies.opener.open(Self.cleanYouTubeURL)
-        if !opened {
+        if opened {
+            count(counters.countingSafariOpen())
+        } else {
             launchFailure = "Safari could not be opened. Open m.youtube.com in Safari yourself."
         }
     }
@@ -126,6 +136,20 @@ public final class AppModel {
     public func finishSetup() {
         dependencies.preferences.set(true, forKey: Self.setupSeenKey)
         setupSeen = true
+    }
+
+    /// The counters as plain text, for the person to share when they ask to.
+    public func countersExport() -> String {
+        counters.exportText(until: dependencies.now())
+    }
+
+    private func count(_ next: LocalCounters) {
+        counters = next
+        saveCounters()
+    }
+
+    private func saveCounters() {
+        dependencies.preferences.set(try? JSONEncoder().encode(counters), forKey: Self.countersKey)
     }
 
     /// The words for the current status; `relative` turns a date into "3 hours ago".

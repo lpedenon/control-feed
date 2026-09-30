@@ -16,6 +16,7 @@ function fakeApi(options: { answer?: unknown; failWith?: Error; granted?: Set<st
     message: MessageListener[];
   } = { startup: [], installed: [], message: [] };
   const sent: { application: string; message: SyncRequest }[] = [];
+  let answer = options.answer;
   const api: BridgeApi = {
     runtime: {
       id: OWN_ID,
@@ -23,7 +24,7 @@ function fakeApi(options: { answer?: unknown; failWith?: Error; granted?: Set<st
       sendNativeMessage: vi.fn(async (application, message) => {
         sent.push({ application, message: message as SyncRequest });
         if (options.failWith) throw options.failWith;
-        return options.answer;
+        return answer;
       }),
       onStartup: { addListener: (l) => listeners.startup.push(l) },
       onInstalled: { addListener: (l) => listeners.installed.push(l) },
@@ -38,7 +39,11 @@ function fakeApi(options: { answer?: unknown; failWith?: Error; granted?: Set<st
   const deliver = (message: unknown, sender: { id?: string; url?: string }) => {
     for (const listener of listeners.message) listener(message, sender);
   };
-  return { api, listeners, sent, deliver };
+  /** Changes what the app answers from now on, like a change made in the app. */
+  const answerWith = (next: unknown) => {
+    answer = next;
+  };
+  return { api, listeners, sent, deliver, answerWith };
 }
 
 function appAnswer(overrides: Record<string, unknown> = {}) {
@@ -157,5 +162,39 @@ describe('native bridge', () => {
     await vi.waitFor(() =>
       expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('invalid-request')),
     );
+  });
+
+  it('brings a change made in the app to a page loaded moments after the last one', async () => {
+    const { api, sent, deliver, answerWith } = fakeApi({ answer: appAnswer() });
+    startNativeBridge(api);
+    const page = { id: OWN_ID, url: 'https://m.youtube.com/' };
+    deliver(PAGE_CONTACT_MESSAGE, page);
+    await vi.waitFor(async () => expect(await loadSettingsUpdatedAt()).toBe(500));
+
+    answerWith(
+      appAnswer({
+        settings: withFeature(DEFAULT_SETTINGS, 'ytShorts', false),
+        settingsUpdatedAt: 600,
+      }),
+    );
+    deliver(PAGE_CONTACT_MESSAGE, page);
+    await vi.waitFor(async () => expect(await loadSettingsUpdatedAt()).toBe(600));
+    expect((await loadSettings()).features.ytShorts).toBe(false);
+    expect(sent.map(({ message }) => message.reason)).toEqual(['page', 'page']);
+  });
+
+  it('warns when it cannot read its settings, and syncs again on the next page load', async () => {
+    vi.spyOn(fakeBrowser.storage.local, 'get').mockRejectedValueOnce(new Error('storage is gone'));
+    const { api, listeners, sent, deliver } = fakeApi({ answer: appAnswer() });
+    startNativeBridge(api);
+    listeners.startup[0]?.();
+    await vi.waitFor(() =>
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('storage is gone')),
+    );
+    expect(sent).toHaveLength(0);
+
+    deliver(PAGE_CONTACT_MESSAGE, { id: OWN_ID, url: 'https://m.youtube.com/' });
+    await vi.waitFor(async () => expect(await loadSettingsUpdatedAt()).toBe(500));
+    expect(sent).toHaveLength(1);
   });
 });

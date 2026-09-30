@@ -26,11 +26,13 @@ struct AppModelTests {
         stored: StoredSettings? = nil,
         contact: ContactRecord? = nil,
         youtubeAppInstalled: Bool? = nil,
-        storageAvailable: Bool = true
+        storageAvailable: Bool = true,
+        preferences reused: UserDefaults? = nil,
+        now: Date = Date(timeIntervalSince1970: 1_700_000_100)
     ) -> Rig {
         let store = FakeStore(settings: stored, contact: contact)
         let opener = FakeOpener()
-        let preferences = UserDefaults(suiteName: "no-brainrot-model-\(UUID().uuidString)")!
+        let preferences = reused ?? UserDefaults(suiteName: "no-brainrot-model-\(UUID().uuidString)")!
         let model = AppModel(dependencies: AppDependencies(
             repository: SettingsRepository(store: store, now: { Date(timeIntervalSince1970: 1_700_000_000) }),
             contacts: store,
@@ -38,7 +40,7 @@ struct AppModelTests {
             opener: opener,
             youtubeAppInstalled: { youtubeAppInstalled },
             preferences: preferences,
-            now: { Date(timeIntervalSince1970: 1_700_000_100) }
+            now: { now }
         ))
         return Rig(model: model, store: store, opener: opener, preferences: preferences)
     }
@@ -165,5 +167,53 @@ struct AppModelTests {
     @Test func producesTheStatusWords() {
         let copy = rig().model.statusCopy { _ in "now" }
         #expect(copy.headline == "Not set up yet")
+    }
+
+    @Test func countsOnlyTheSafariOpensIOSAccepted() async {
+        let rig = rig()
+        await rig.model.openCleanYouTube()
+        rig.opener.accepts = false
+        await rig.model.openCleanYouTube()
+        #expect(rig.model.counters.safariOpens == 1)
+    }
+
+    @Test func countsSavedRuleChangesAndTheHidingSwitchesTurnedOff() {
+        let rig = rig()
+        rig.model.change { $0.settingFeature("ytShorts", enabled: false) }
+        rig.model.change { $0.settingFeature("ytComments", enabled: true) }
+        rig.model.change { $0.settingSite("youtube", enabled: false) }
+        #expect(rig.model.counters.ruleChanges == 3)
+        #expect(rig.model.counters.hidingSwitchesTurnedOff == 2)
+    }
+
+    @Test func doesNotCountAChangeThatWasNotSaved() {
+        let rig = rig()
+        rig.model.change { $0 }
+        rig.store.failSaving = true
+        rig.model.change { $0.settingFeature("ytShorts", enabled: false) }
+        #expect(rig.model.counters == LocalCounters(since: Date(timeIntervalSince1970: 1_700_000_100)))
+    }
+
+    @Test func theCountersAndWhenCountingBeganSurviveARestart() async {
+        let first = rig()
+        await first.model.openCleanYouTube()
+        first.model.change { $0.settingFeature("ytShorts", enabled: false) }
+        let later = rig(preferences: first.preferences, now: Date(timeIntervalSince1970: 1_800_000_000))
+        #expect(later.model.counters == first.model.counters)
+        #expect(later.model.counters.since == Date(timeIntervalSince1970: 1_700_000_100))
+    }
+
+    @Test func exportsTheTotalsAndThePeriodOnly() async {
+        let rig = rig()
+        await rig.model.openCleanYouTube()
+        rig.model.change { $0.settingFeature("ytShorts", enabled: false) }
+        #expect(rig.model.countersExport() == """
+        No Brainrot counters
+        From 2023-11-14T22:15:00Z to 2023-11-14T22:15:00Z
+        Opened YouTube in Safari from this app: 1
+        Rule changes saved in this app: 1
+        Hiding switches turned off in this app: 1
+        Only what you do in the No Brainrot app is counted. It cannot see Safari, the YouTube app or what you watch.
+        """)
     }
 }

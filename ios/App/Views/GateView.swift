@@ -90,6 +90,17 @@ struct GateView: View {
             } header: {
                 Text("What it cannot do")
             }
+
+            Section {
+                Explainer("The YouTube app has its own Shorts feed limit. At 0 minutes, YouTube reminds you to stop as soon as you start scrolling Shorts in its app, where No Brainrot cannot reach.")
+                Explainer("In the YouTube app, tap You, then Settings, Time management and Shorts feed limit. Turn it on and set it to 0 minutes.")
+                limit("YouTube decides who gets it. It may not be offered on your account, in your country or in your version of the app, and the menu names can differ.")
+                limit("YouTube's reminder can be dismissed or ignored with a tap. It is a nudge, not a lock.")
+                limit("No Brainrot cannot switch it on or check whether it is on.")
+                limit("If the gate is set up, opening the YouTube app sends you to Safari. Switch the automation off in Shortcuts while you change this, then back on.")
+            } header: {
+                Text("Optional: YouTube's Shorts limit")
+            }
         }
         .navigationTitle("Gate")
     }

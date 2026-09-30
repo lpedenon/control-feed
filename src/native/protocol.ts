@@ -7,7 +7,10 @@ import { parseSettings, type Settings } from '../core/settings';
  * holds and gets back what the app holds, and the later change wins.
  *
  * Bump this on any change the other side would misread. The Swift side lives in
- * ios/Packages/NoBrainrotKit and is checked against ios/Contract/contract.json.
+ * ios/Packages/NoBrainrotKit and is checked against its generated
+ * Sources/NoBrainrotKit/ContractData.swift and
+ * Tests/NoBrainrotKitTests/Resources/contract-vectors.json, which
+ * `pnpm ios:contract` writes from this code (see contract.ts).
  */
 export const PROTOCOL_VERSION = 1;
 

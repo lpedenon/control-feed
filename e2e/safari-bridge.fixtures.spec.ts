@@ -77,6 +77,28 @@ test('applies newer settings from the app to the page that reported in', async (
   expect(await storage()).toMatchObject({ settingsUpdatedAt: 500 });
 });
 
+test('brings a change made in the app to the next page load, moments after the last', async ({
+  context,
+  app,
+  storage,
+}) => {
+  await app.answerWith({
+    reply: appAnswer(withFeature(DEFAULT_SETTINGS, 'ytHomeFeed', false), 500),
+  });
+  const page = await context.newPage();
+  await page.goto(HOME, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('ytm-rich-grid-renderer').first()).toBeVisible();
+
+  // Seconds later the person hides the home feed again in the app, then reloads YouTube.
+  await app.answerWith({ reply: appAnswer(DEFAULT_SETTINGS, 600) });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('ytm-rich-grid-renderer').first()).toBeHidden();
+  expect(await storage()).toMatchObject({ settingsUpdatedAt: 600 });
+  const pageLoads = (await app.messages()).filter((message) => message.reason === 'page');
+  expect(pageLoads).toHaveLength(2);
+});
+
 test('keeps filtering when the app cannot be reached', async ({ context, app }) => {
   await app.answerWith({ error: 'Specified native messaging host not found.' });
   const page = await context.newPage();

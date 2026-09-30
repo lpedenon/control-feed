@@ -148,8 +148,8 @@ Release notes are written from them.
    `git tag -a v0.2.0` (write the highlights in the editor).
 3. `git push --follow-tags`.
 
-Also update `MARKETING_VERSION` in `ios/Config/Shared.xcconfig`; a unit test
-fails if it differs from `package.json`.
+Also update `MARKETING_VERSION` in `ios/Config/Shared.xcconfig`; the CI `ios`
+job fails if the built app's version differs from `package.json`.
 
 The Release workflow checks that the tag matches `package.json`, runs every
 test, builds the Chrome and Firefox packages and publishes them on a GitHub

@@ -28,7 +28,7 @@ struct HelpView: View {
             }
 
             Section("Privacy") {
-                Explainer("Your rules are stored on this iPhone and shared only between this app and its Safari extension. There is no account, no analytics and no server. The extension tells the app when it ran, which YouTube address type it ran on (m.youtube.com or www.youtube.com), its version and what Safari says about site access. It never sends what you watch or search for.")
+                Explainer("Your rules are stored on this iPhone and shared only between this app and its Safari extension. There is no account, no analytics and no server. The extension tells the app when it ran, which YouTube address type it ran on (m.youtube.com or www.youtube.com), its version and what Safari says about site access. It never sends what you watch or search for. The app also counts a few things you do in it, such as opening YouTube in Safari from it. Those counts stay on this iPhone unless you export them yourself.")
                 Link("Read the privacy policy", destination: Self.privacy)
             }
 

@@ -45,6 +45,19 @@ struct StatusView: View {
             }
 
             Section {
+                ForEach(model.counters.rows) { row in
+                    LabeledContent(row.label, value: row.count, format: .number)
+                }
+                ShareLink(item: model.countersExport()) {
+                    Label("Export counters", systemImage: "square.and.arrow.up")
+                }
+            } header: {
+                Text("Counted in this app")
+            } footer: {
+                Text("Since \(model.counters.since.formatted(date: .abbreviated, time: .omitted)). \(LocalCounters.scopeNote) The counts stay on this iPhone unless you export them.")
+            }
+
+            Section {
                 Text(copy.footnote)
                     .font(.footnote)
                     .foregroundStyle(.secondary)

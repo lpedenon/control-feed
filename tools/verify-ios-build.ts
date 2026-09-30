@@ -2,7 +2,8 @@
  * Checks a built No Brainrot.app the way the phone will meet it: the Safari
  * extension is embedded with its web files where Safari looks for them, the
  * native handler and App Group are declared, and the app can be reached by the
- * link the extension's popup uses. macOS only (it reads plists with plutil).
+ * link the extension's popup uses, and both carry package.json's version.
+ * macOS only (it reads plists with plutil).
  *   node tools/verify-ios-build.ts path/to/NoBrainrot.app
  */
 import { execFile } from 'node:child_process';
@@ -12,6 +13,12 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 
 const run = promisify(execFile);
+
+/**
+ * Why each bundle reads UserDefaults, as its privacy manifest must say: 1C8F.1
+ * for the App Group the app and extension share, CA92.1 for the app's own notes.
+ */
+const USER_DEFAULTS_REASONS = { app: ['1C8F.1', 'CA92.1'], extension: ['1C8F.1'] } as const;
 
 type Json = Record<string, unknown>;
 
@@ -36,6 +43,28 @@ function checkExtensionInfo(info: Json, appId: string, problems: string[]): void
   }
   if (!String(info.CFBundleIdentifier ?? '').startsWith(`${appId}.`)) {
     problems.push('The extension bundle id is not inside the app bundle id.');
+  }
+}
+
+async function checkPrivacyManifest(
+  label: keyof typeof USER_DEFAULTS_REASONS,
+  dir: string,
+  problems: string[],
+): Promise<void> {
+  const path = join(dir, 'PrivacyInfo.xcprivacy');
+  if (!existsSync(path)) {
+    problems.push(`The ${label} has no privacy manifest.`);
+    return;
+  }
+  const manifest = await readPlist(path);
+  const declared = ((manifest.NSPrivacyAccessedAPITypes ?? []) as Json[])
+    .filter(
+      (entry) => entry.NSPrivacyAccessedAPIType === 'NSPrivacyAccessedAPICategoryUserDefaults',
+    )
+    .flatMap((entry) => asStrings(entry.NSPrivacyAccessedAPITypeReasons));
+  for (const reason of USER_DEFAULTS_REASONS[label]) {
+    if (!declared.includes(reason))
+      problems.push(`The ${label} privacy manifest gives no ${reason} reason for UserDefaults.`);
   }
 }
 
@@ -79,7 +108,7 @@ async function checkWebFiles(appex: string, problems: string[]): Promise<void> {
 }
 
 /** Returns what is wrong with a built app, or an empty list. */
-export async function verifyBuiltApp(appPath: string): Promise<string[]> {
+export async function verifyBuiltApp(appPath: string, version: string): Promise<string[]> {
   const problems: string[] = [];
   const appex = join(appPath, 'PlugIns', 'NoBrainrotExtension.appex');
   if (!existsSync(appex)) return ['The app does not embed NoBrainrotExtension.appex in PlugIns.'];
@@ -87,6 +116,16 @@ export async function verifyBuiltApp(appPath: string): Promise<string[]> {
   const appInfo = await readPlist(join(appPath, 'Info.plist'));
   const extensionInfo = await readPlist(join(appex, 'Info.plist'));
   checkExtensionInfo(extensionInfo, String(appInfo.CFBundleIdentifier ?? ''), problems);
+  for (const [label, info] of [
+    ['app', appInfo],
+    ['extension', extensionInfo],
+  ] as const) {
+    if (info.CFBundleShortVersionString !== version) {
+      problems.push(
+        `The ${label} is version ${String(info.CFBundleShortVersionString)}, not ${version} as in package.json.`,
+      );
+    }
+  }
 
   const schemes = ((appInfo.CFBundleURLTypes ?? []) as { CFBundleURLSchemes?: string[] }[]).flatMap(
     (type) => asStrings(type.CFBundleURLSchemes),
@@ -103,13 +142,8 @@ export async function verifyBuiltApp(appPath: string): Promise<string[]> {
     problems.push('The app and the extension name different App Groups.');
   }
 
-  for (const [label, dir] of [
-    ['app', appPath],
-    ['extension', appex],
-  ] as const) {
-    if (!existsSync(join(dir, 'PrivacyInfo.xcprivacy')))
-      problems.push(`The ${label} has no privacy manifest.`);
-  }
+  await checkPrivacyManifest('app', appPath, problems);
+  await checkPrivacyManifest('extension', appex, problems);
   if (!existsSync(join(appPath, 'Assets.car')))
     problems.push('The app has no compiled asset catalog (icon, accent color).');
 
@@ -120,7 +154,10 @@ export async function verifyBuiltApp(appPath: string): Promise<string[]> {
 async function main(): Promise<void> {
   const appPath = process.argv[2];
   if (!appPath) throw new Error('Usage: node tools/verify-ios-build.ts path/to/NoBrainrot.app');
-  const problems = await verifyBuiltApp(appPath);
+  const packageJson = JSON.parse(
+    await readFile(join(import.meta.dirname, '..', 'package.json'), 'utf8'),
+  ) as { version: string };
+  const problems = await verifyBuiltApp(appPath, packageJson.version);
   for (const problem of problems) process.stderr.write(`problem: ${problem}\n`);
   if (problems.length > 0) process.exitCode = 1;
   else process.stdout.write(`ok: ${appPath}\n`);

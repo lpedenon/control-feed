@@ -2,7 +2,6 @@ import { join } from 'node:path';
 import {
   type BrowserContext,
   test as base,
-  expect as baseExpect,
   chromium,
   devices,
   type Worker,
@@ -75,9 +74,8 @@ export const test = base.extend<Fixtures>({
     );
   },
   app: async ({ serviceWorker }, use) => {
-    // Waits for the start-up exchange (which fails: there is no native host) to finish first,
-    // so it cannot share an exchange with the page load a test is about to cause.
-    await baseExpect.poll(() => serviceWorker.evaluate(() => 'chrome' in globalThis)).toBe(true);
+    // The start-up exchange may run before or after the stand-in is in place, so it may or
+    // may not reach it. Tests pick out the messages they cause instead of relying on order.
     await use({
       answerWith: (answer) =>
         serviceWorker.evaluate((next) => {

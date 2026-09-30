@@ -9,9 +9,6 @@ import {
   type SyncRequest,
 } from './protocol';
 
-/** Page loads closer together than this share one conversation with the app. */
-export const PAGE_SYNC_INTERVAL_MS = 60_000;
-
 /** Everything the sync needs from its surroundings, so it can be run against fakes. */
 export interface SyncDeps {
   loadSettings(): Promise<Settings>;
@@ -22,18 +19,18 @@ export interface SyncDeps {
   sendToApp(message: SyncRequest): Promise<unknown>;
   siteAccess(host: SiteHost): Promise<SiteAccess>;
   extensionVersion(): string;
-  now(): number;
 }
 
 export type SyncOutcome =
   | { readonly status: 'applied' }
   | { readonly status: 'unchanged' }
-  | { readonly status: 'throttled' }
+  | { readonly status: 'storage-failed'; readonly error: string }
   | { readonly status: 'app-unreachable'; readonly error: string }
   | { readonly status: 'app-refused'; readonly error: string }
   | { readonly status: 'invalid-response' };
 
 export interface NativeSync {
+  /** Always resolves: every failure is an outcome, never a rejection. */
   sync(reason: ContactReason, pageHost?: SiteHost | null): Promise<SyncOutcome>;
 }
 
@@ -60,22 +57,28 @@ async function collectSiteAccess(deps: SyncDeps): Promise<Record<SiteHost, SiteA
  * app adopts the extension's when those are. One exchange runs at a time. A
  * second request for the same reason joins the running exchange; one for
  * another reason waits its turn, so a page load during start-up is still
- * reported as a page load.
+ * reported as a page load. Every page load that does not join a running
+ * exchange starts its own, so a change made in the app reaches the next page.
  */
 export function createNativeSync(deps: SyncDeps): NativeSync {
   let running: { readonly reason: ContactReason; readonly done: Promise<SyncOutcome> } | null =
     null;
-  let lastPageSyncAt: number | null = null;
 
   const exchange = async (
     reason: ContactReason,
     pageHost: SiteHost | null,
   ): Promise<SyncOutcome> => {
-    const [settings, settingsUpdatedAt, siteAccess] = await Promise.all([
-      deps.loadSettings(),
-      deps.loadSettingsUpdatedAt(),
-      collectSiteAccess(deps),
-    ]);
+    let local: [Settings, number, Record<SiteHost, SiteAccess>];
+    try {
+      local = await Promise.all([
+        deps.loadSettings(),
+        deps.loadSettingsUpdatedAt(),
+        collectSiteAccess(deps),
+      ]);
+    } catch (error) {
+      return { status: 'storage-failed', error: describeError(error) };
+    }
+    const [settings, settingsUpdatedAt, siteAccess] = local;
     const request: SyncRequest = {
       type: 'sync',
       protocolVersion: PROTOCOL_VERSION,
@@ -100,7 +103,11 @@ export function createNativeSync(deps: SyncDeps): NativeSync {
     if (response.settings === null || response.settingsUpdatedAt <= settingsUpdatedAt) {
       return { status: 'unchanged' };
     }
-    await deps.applySettings(response.settings, response.settingsUpdatedAt);
+    try {
+      await deps.applySettings(response.settings, response.settingsUpdatedAt);
+    } catch (error) {
+      return { status: 'storage-failed', error: describeError(error) };
+    }
     return { status: 'applied' };
   };
 
@@ -108,13 +115,6 @@ export function createNativeSync(deps: SyncDeps): NativeSync {
     if (running) {
       if (running.reason === reason) return running.done;
       return running.done.then(() => sync(reason, pageHost));
-    }
-    if (reason === 'page') {
-      const now = deps.now();
-      if (lastPageSyncAt !== null && now - lastPageSyncAt < PAGE_SYNC_INTERVAL_MS) {
-        return Promise.resolve({ status: 'throttled' });
-      }
-      lastPageSyncAt = now;
     }
     const done = exchange(reason, pageHost).finally(() => {
       running = null;

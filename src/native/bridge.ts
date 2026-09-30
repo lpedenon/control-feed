@@ -37,7 +37,6 @@ export function createBridgeDeps(api: BridgeApi): SyncDeps {
     sendToApp: (message) => api.runtime.sendNativeMessage(NATIVE_APP_ID, message),
     siteAccess: (host) => siteAccess(api, host),
     extensionVersion: () => api.runtime.getManifest().version,
-    now: Date.now,
   };
 }
 
@@ -52,7 +51,9 @@ function hostOf(url: string | undefined): SiteHost | null {
 }
 
 function report(outcome: Awaited<ReturnType<NativeSync['sync']>>): void {
-  if (outcome.status === 'app-unreachable' || outcome.status === 'app-refused') {
+  if (outcome.status === 'storage-failed') {
+    console.warn(`[No Brainrot] Could not read or save the settings: ${outcome.error}`);
+  } else if (outcome.status === 'app-unreachable' || outcome.status === 'app-refused') {
     console.warn(`[No Brainrot] Could not sync with the app: ${outcome.error}`);
   } else if (outcome.status === 'invalid-response') {
     console.warn('[No Brainrot] The app sent an answer this version does not understand.');

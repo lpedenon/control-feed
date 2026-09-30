@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS, withFeature } from '../core/settings';
 import { PROTOCOL_VERSION, type SiteAccess, type SiteHost, type SyncRequest } from './protocol';
-import { createNativeSync, PAGE_SYNC_INTERVAL_MS, type SyncDeps } from './sync';
+import { createNativeSync, type SyncDeps } from './sync';
 
 const APP_SETTINGS = withFeature(DEFAULT_SETTINGS, 'ytShorts', false);
 
@@ -17,25 +17,29 @@ function answer(overrides: Record<string, unknown> = {}) {
 }
 
 function harness(options: { response?: unknown; sendError?: Error; updatedAt?: number } = {}) {
-  let time = 1_000_000;
   let updatedAt = options.updatedAt ?? 100;
+  let reply: unknown = 'response' in options ? options.response : answer();
   const sent: SyncRequest[] = [];
-  const applied: { settingsUpdatedAt: number; ytShorts: boolean }[] = [];
+  const applied: { settingsUpdatedAt: number; ytShorts: boolean; ytComments: boolean }[] = [];
   const access: Record<SiteHost, SiteAccess | Error> = {
     'm.youtube.com': 'granted',
     'www.youtube.com': 'not-granted',
   };
   const deps: SyncDeps = {
-    loadSettings: async () => DEFAULT_SETTINGS,
+    loadSettings: vi.fn(async () => DEFAULT_SETTINGS),
     loadSettingsUpdatedAt: async () => updatedAt,
     applySettings: vi.fn(async (settings, appliedAt) => {
       updatedAt = appliedAt;
-      applied.push({ settingsUpdatedAt: appliedAt, ytShorts: settings.features.ytShorts });
+      applied.push({
+        settingsUpdatedAt: appliedAt,
+        ytShorts: settings.features.ytShorts,
+        ytComments: settings.features.ytComments,
+      });
     }),
     sendToApp: vi.fn(async (message) => {
       sent.push(message);
       if (options.sendError) throw options.sendError;
-      return 'response' in options ? options.response : answer();
+      return reply;
     }),
     siteAccess: async (host) => {
       const value = access[host];
@@ -43,15 +47,15 @@ function harness(options: { response?: unknown; sendError?: Error; updatedAt?: n
       return value;
     },
     extensionVersion: () => '0.2.0',
-    now: () => time,
   };
   return {
     deps,
     sent,
     applied,
     access,
-    advance: (ms: number) => {
-      time += ms;
+    /** Changes what the app answers from now on, like a change made in the app. */
+    answerWith: (next: unknown) => {
+      reply = next;
     },
   };
 }
@@ -87,7 +91,7 @@ describe('native sync', () => {
   it('takes the app settings when they are newer', async () => {
     const { deps, applied } = harness();
     expect(await createNativeSync(deps).sync('startup')).toEqual({ status: 'applied' });
-    expect(applied).toEqual([{ settingsUpdatedAt: 200, ytShorts: false }]);
+    expect(applied).toEqual([{ settingsUpdatedAt: 200, ytShorts: false, ytComments: false }]);
   });
 
   it.each([
@@ -143,24 +147,26 @@ describe('native sync', () => {
     });
   });
 
-  it('lets a burst of page loads share one exchange, then allows the next after a while', async () => {
-    const { deps, advance } = harness();
+  it('brings a change made in the app to the very next page load', async () => {
+    const { deps, applied, answerWith } = harness();
     const sync = createNativeSync(deps);
-    expect(await sync.sync('page', 'm.youtube.com')).toMatchObject({ status: 'applied' });
-    advance(1000);
-    expect(await sync.sync('page', 'm.youtube.com')).toEqual({ status: 'throttled' });
-    expect(deps.sendToApp).toHaveBeenCalledTimes(1);
-    advance(PAGE_SYNC_INTERVAL_MS);
-    expect(await sync.sync('page', 'm.youtube.com')).toMatchObject({ status: 'unchanged' });
+    expect(await sync.sync('page', 'm.youtube.com')).toEqual({ status: 'applied' });
+    answerWith(
+      answer({ settings: withFeature(APP_SETTINGS, 'ytComments', true), settingsUpdatedAt: 300 }),
+    );
+    expect(await sync.sync('page', 'm.youtube.com')).toEqual({ status: 'applied' });
     expect(deps.sendToApp).toHaveBeenCalledTimes(2);
+    expect(applied).toEqual([
+      { settingsUpdatedAt: 200, ytShorts: false, ytComments: false },
+      { settingsUpdatedAt: 300, ytShorts: false, ytComments: true },
+    ]);
   });
 
-  it('does not throttle a start-up', async () => {
-    const { deps, advance } = harness();
+  it('syncs on every start-up', async () => {
+    const { deps } = harness();
     const sync = createNativeSync(deps);
     await sync.sync('page', 'm.youtube.com');
     await sync.sync('startup');
-    advance(1);
     await sync.sync('startup');
     expect(deps.sendToApp).toHaveBeenCalledTimes(3);
   });
@@ -179,7 +185,7 @@ describe('native sync', () => {
     const [, page] = await Promise.all([sync.sync('startup'), sync.sync('page', 'm.youtube.com')]);
     expect(sent.map((message) => message.reason)).toEqual(['startup', 'page']);
     expect(sent[1]?.pageHost).toBe('m.youtube.com');
-    expect(page.status).not.toBe('throttled');
+    expect(page).toEqual({ status: 'unchanged' });
   });
 
   it('never runs two exchanges at once', async () => {
@@ -210,13 +216,27 @@ describe('native sync', () => {
     expect(deps.sendToApp).toHaveBeenCalledTimes(2);
   });
 
-  it('does not count a throttled page load against the start of the interval', async () => {
-    const { deps, advance } = harness();
+  it('reports settings it cannot read, and still runs the sync waiting behind it', async () => {
+    const { deps, sent } = harness();
+    vi.mocked(deps.loadSettings).mockRejectedValueOnce(new Error('storage is gone'));
     const sync = createNativeSync(deps);
-    await sync.sync('page');
-    advance(PAGE_SYNC_INTERVAL_MS - 1);
-    expect(await sync.sync('page')).toEqual({ status: 'throttled' });
-    advance(1);
-    expect((await sync.sync('page')).status).not.toBe('throttled');
+    const [startup, page] = await Promise.all([
+      sync.sync('startup'),
+      sync.sync('page', 'm.youtube.com'),
+    ]);
+    expect(startup).toEqual({ status: 'storage-failed', error: 'storage is gone' });
+    expect(page).toEqual({ status: 'applied' });
+    expect(sent.map((message) => message.reason)).toEqual(['page']);
+  });
+
+  it('reports settings from the app that it cannot save', async () => {
+    const { deps } = harness();
+    vi.mocked(deps.applySettings).mockRejectedValueOnce(new Error('quota exceeded'));
+    const sync = createNativeSync(deps);
+    expect(await sync.sync('startup')).toEqual({
+      status: 'storage-failed',
+      error: 'quota exceeded',
+    });
+    expect(await sync.sync('startup')).toEqual({ status: 'applied' });
   });
 });
