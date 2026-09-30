@@ -1,31 +1,45 @@
 /**
- * Saves trimmed snapshots of real YouTube pages to e2e/fixtures/youtube/.
- * Unit tests read them to check tile parsing, and the fixture E2E suite serves
- * them at youtube.com URLs so hiding can be checked without the network.
+ * Saves trimmed snapshots of real YouTube pages to e2e/fixtures/youtube/, or
+ * with --mobile the phone site (m.youtube.com, served to an iPhone user agent)
+ * to e2e/fixtures/youtube-mobile/. Unit tests read them to check tile parsing,
+ * and the fixture E2E suite serves them at youtube.com URLs so hiding can be
+ * checked without the network.
  *
  * Re-run when YouTube changes its markup:
  *   node e2e/tools/capture-youtube-fixtures.ts
+ *   node e2e/tools/capture-youtube-fixtures.ts --mobile
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium, type Page } from '@playwright/test';
+import { chromium, devices, type Page } from '@playwright/test';
 
-const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures', 'youtube');
+const mobile = process.argv.includes('--mobile');
 
-const WARMUP_URL = 'https://www.youtube.com/watch?v=k7RM-ot2NWY';
+const OUT_DIR = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'fixtures',
+  mobile ? 'youtube-mobile' : 'youtube',
+);
+
+const ORIGIN = mobile ? 'https://m.youtube.com' : 'https://www.youtube.com';
+
+const WARMUP_URL = `${ORIGIN}/watch?v=k7RM-ot2NWY`;
 
 const PAGES = [
-  { name: 'search', url: 'https://www.youtube.com/results?search_query=linear+algebra' },
-  { name: 'watch', url: 'https://www.youtube.com/watch?v=fNk_zzaMoSs' },
-  { name: 'home', url: 'https://www.youtube.com/' },
-  { name: 'channel-videos', url: 'https://www.youtube.com/@3blue1brown/videos' },
+  { name: 'search', url: `${ORIGIN}/results?search_query=linear+algebra` },
+  { name: 'watch', url: `${ORIGIN}/watch?v=fNk_zzaMoSs` },
+  { name: 'home', url: `${ORIGIN}/` },
+  { name: 'channel-videos', url: `${ORIGIN}/@3blue1brown/videos` },
+  ...(mobile ? [{ name: 'shorts', url: `${ORIGIN}/shorts/` }] : []),
 ] as const;
 
 /** Runs in the page: strips scripts, styles, media and noise, keeping structure and text. */
 function snapshotDocument(): string {
   const doc = document.documentElement.cloneNode(true) as HTMLElement;
-  const drop = 'script, style, link, noscript, iframe, video, canvas, template, ytd-miniplayer';
+  const drop =
+    'script, style, link, noscript, iframe, video, canvas, template, ytd-miniplayer, ytm-miniplayer';
   for (const node of doc.querySelectorAll(drop)) node.remove();
   for (const svg of doc.querySelectorAll('svg')) svg.replaceChildren();
   for (const img of doc.querySelectorAll('img')) {
@@ -55,10 +69,11 @@ async function main(): Promise<void> {
     channel: 'chromium',
     args: ['--autoplay-policy=no-user-gesture-required'],
   });
-  const context = await browser.newContext({
-    locale: 'en-US',
-    viewport: { width: 1280, height: 900 },
-  });
+  const context = await browser.newContext(
+    mobile
+      ? { ...devices['iPhone 15'], locale: 'en-US' }
+      : { locale: 'en-US', viewport: { width: 1280, height: 900 } },
+  );
   const page = await context.newPage();
   try {
     // Without watch history YouTube leaves the home feed empty, so watch a little first.
