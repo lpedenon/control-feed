@@ -7,12 +7,31 @@ import { parseSettings, type Settings } from './settings';
  */
 const settingsItem = storage.defineItem<unknown>('local:settings');
 
+/**
+ * When the settings last changed, in milliseconds. Where the settings are
+ * shared with another copy of themselves (the iOS app), the later change wins.
+ */
+const updatedAtItem = storage.defineItem<unknown>('local:settingsUpdatedAt');
+
 export async function loadSettings(): Promise<Settings> {
   return parseSettings(await settingsItem.getValue());
 }
 
-export async function saveSettings(settings: Settings): Promise<void> {
-  await settingsItem.setValue(settings);
+/** Zero when the settings were never changed or the stored stamp is unusable. */
+export async function loadSettingsUpdatedAt(): Promise<number> {
+  const value = await updatedAtItem.getValue();
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+/** Both are written in one storage call, so they can never disagree after a crash. */
+export async function saveSettings(
+  settings: Settings,
+  updatedAt: number = Date.now(),
+): Promise<void> {
+  await storage.setItems([
+    { item: settingsItem, value: settings },
+    { item: updatedAtItem, value: updatedAt },
+  ]);
 }
 
 /** Calls `onChange` with validated settings whenever they change in any tab. */

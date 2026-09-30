@@ -19,9 +19,15 @@ export default defineConfig({
   manifest: ({ browser }) => ({
     name: 'No Brainrot',
     description:
-      'Take back your attention. Hide Shorts, Reels, recommendations and endless feeds on YouTube and Instagram.',
+      browser === 'safari'
+        ? 'Take back your attention. Hide Shorts, recommendations and endless feeds on YouTube.'
+        : 'Take back your attention. Hide Shorts, Reels, recommendations and endless feeds on YouTube and Instagram.',
     homepage_url: 'https://github.com/lpedenon/no-brainrot',
-    permissions: ['storage'],
+    permissions: [
+      'storage',
+      // Safari only: lets the extension sync its settings with the iOS app.
+      ...(browser === 'safari' ? ['nativeMessaging'] : []),
+    ],
     action: {
       default_title: 'No Brainrot settings',
     },
