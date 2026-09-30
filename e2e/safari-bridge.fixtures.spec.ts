@@ -82,21 +82,27 @@ test('brings a change made in the app to the next page load, moments after the l
   app,
   storage,
 }) => {
+  const pageLoads = async () =>
+    (await app.messages()).filter((message) => message.reason === 'page').length;
+  // The defaults and this first answer both hide the phone home feed.
   await app.answerWith({
-    reply: appAnswer(withFeature(DEFAULT_SETTINGS, 'ytHomeFeed', false), 500),
+    reply: appAnswer(withFeature(DEFAULT_SETTINGS, 'ytComments', true), 500),
   });
   const page = await context.newPage();
   await page.goto(HOME, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('ytm-rich-grid-renderer').first()).toBeVisible();
+  await expect.poll(pageLoads).toBe(1);
+  await expect.poll(storage).toMatchObject({ settingsUpdatedAt: 500 });
 
-  // Seconds later the person hides the home feed again in the app, then reloads YouTube.
-  await app.answerWith({ reply: appAnswer(DEFAULT_SETTINGS, 600) });
+  // Seconds later the person shows the home feed in the app, then reloads YouTube.
+  await app.answerWith({
+    reply: appAnswer(withFeature(DEFAULT_SETTINGS, 'ytHomeFeed', false), 600),
+  });
   await page.reload({ waitUntil: 'domcontentloaded' });
 
-  await expect(page.locator('ytm-rich-grid-renderer').first()).toBeHidden();
-  expect(await storage()).toMatchObject({ settingsUpdatedAt: 600 });
-  const pageLoads = (await app.messages()).filter((message) => message.reason === 'page');
-  expect(pageLoads).toHaveLength(2);
+  // Only the app's latest answer shows the feed.
+  await expect(page.locator('ytm-rich-grid-renderer').first()).toBeVisible();
+  await expect.poll(pageLoads).toBe(2);
+  await expect.poll(storage).toMatchObject({ settingsUpdatedAt: 600 });
 });
 
 test('keeps filtering when the app cannot be reached', async ({ context, app }) => {

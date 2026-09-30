@@ -3,8 +3,9 @@
  * extension is embedded with its web files where Safari looks for them, the
  * native handler and App Group are declared, and the app can be reached by the
  * link the extension's popup uses, and both carry package.json's version.
- * macOS only (it reads plists with plutil).
- *   node tools/verify-ios-build.ts path/to/NoBrainrot.app
+ * It also reads the entitlements XcodeGen wrote, since an unsigned build has
+ * none. macOS only (it reads plists with plutil).
+ *   node tools/verify-ios-build.ts path/to/NoBrainrot.app ios/Generated
  */
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -19,6 +20,17 @@ const run = promisify(execFile);
  * for the App Group the app and extension share, CA92.1 for the app's own notes.
  */
 const USER_DEFAULTS_REASONS = { app: ['1C8F.1', 'CA92.1'], extension: ['1C8F.1'] } as const;
+
+/**
+ * What XcodeGen writes for each target (ios/project.yml). Signing puts the
+ * entitlements into the bundle. Both files still hold build settings such as
+ * $(NB_APP_GROUP), which Xcode expands alike in each, so they are compared as
+ * written; the built Info.plists show what they expand to.
+ */
+const GENERATED = {
+  app: { info: 'App-Info.plist', entitlements: 'App.entitlements' },
+  extension: { info: 'Extension-Info.plist', entitlements: 'Extension.entitlements' },
+} as const;
 
 type Json = Record<string, unknown>;
 
@@ -68,6 +80,25 @@ async function checkPrivacyManifest(
   }
 }
 
+async function checkAppGroupEntitlement(
+  label: keyof typeof GENERATED,
+  generatedDir: string,
+  problems: string[],
+): Promise<void> {
+  const files = GENERATED[label];
+  const entitlementsPath = join(generatedDir, files.entitlements);
+  if (!existsSync(entitlementsPath)) {
+    problems.push(`The ${label} has no ${files.entitlements} from XcodeGen.`);
+    return;
+  }
+  const info = await readPlist(join(generatedDir, files.info));
+  const entitlements = await readPlist(entitlementsPath);
+  const groups = asStrings(entitlements['com.apple.security.application-groups']);
+  if (!groups.includes(String(info.NBAppGroupIdentifier ?? ''))) {
+    problems.push(`The ${label} entitlements do not grant the App Group its Info.plist names.`);
+  }
+}
+
 async function checkWebFiles(appex: string, problems: string[]): Promise<void> {
   const manifestPath = join(appex, 'manifest.json');
   if (!existsSync(manifestPath)) {
@@ -107,8 +138,15 @@ async function checkWebFiles(appex: string, problems: string[]): Promise<void> {
   }
 }
 
-/** Returns what is wrong with a built app, or an empty list. */
-export async function verifyBuiltApp(appPath: string, version: string): Promise<string[]> {
+/**
+ * Returns what is wrong with a built app, or an empty list. `generatedDir` is
+ * where XcodeGen wrote the Info.plists and entitlements the app was built from.
+ */
+export async function verifyBuiltApp(
+  appPath: string,
+  version: string,
+  generatedDir: string,
+): Promise<string[]> {
   const problems: string[] = [];
   const appex = join(appPath, 'PlugIns', 'NoBrainrotExtension.appex');
   if (!existsSync(appex)) return ['The app does not embed NoBrainrotExtension.appex in PlugIns.'];
@@ -141,6 +179,8 @@ export async function verifyBuiltApp(appPath: string, version: string): Promise<
   if (extensionInfo.NBAppGroupIdentifier !== appInfo.NBAppGroupIdentifier) {
     problems.push('The app and the extension name different App Groups.');
   }
+  await checkAppGroupEntitlement('app', generatedDir, problems);
+  await checkAppGroupEntitlement('extension', generatedDir, problems);
 
   await checkPrivacyManifest('app', appPath, problems);
   await checkPrivacyManifest('extension', appex, problems);
@@ -152,12 +192,14 @@ export async function verifyBuiltApp(appPath: string, version: string): Promise<
 }
 
 async function main(): Promise<void> {
-  const appPath = process.argv[2];
-  if (!appPath) throw new Error('Usage: node tools/verify-ios-build.ts path/to/NoBrainrot.app');
+  const [appPath, generatedDir] = process.argv.slice(2);
+  if (!appPath || !generatedDir) {
+    throw new Error('Usage: node tools/verify-ios-build.ts path/to/NoBrainrot.app ios/Generated');
+  }
   const packageJson = JSON.parse(
     await readFile(join(import.meta.dirname, '..', 'package.json'), 'utf8'),
   ) as { version: string };
-  const problems = await verifyBuiltApp(appPath, packageJson.version);
+  const problems = await verifyBuiltApp(appPath, packageJson.version, generatedDir);
   for (const problem of problems) process.stderr.write(`problem: ${problem}\n`);
   if (problems.length > 0) process.exitCode = 1;
   else process.stdout.write(`ok: ${appPath}\n`);

@@ -43,6 +43,23 @@ const MANIFEST = {
 let root: string;
 let app: string;
 let appex: string;
+let generated: string;
+
+/** What XcodeGen writes: the App Group as a build setting Xcode expands later. */
+async function writeGenerated(appGroups: string[], extensionGroups: string[]): Promise<void> {
+  const entitlements = (groups: string[]) =>
+    plist({ 'com.apple.security.application-groups': groups });
+  await writeFile(
+    join(generated, 'App-Info.plist'),
+    plist({ NBAppGroupIdentifier: '$(NB_APP_GROUP)' }),
+  );
+  await writeFile(
+    join(generated, 'Extension-Info.plist'),
+    plist({ NBAppGroupIdentifier: '$(NB_APP_GROUP)' }),
+  );
+  await writeFile(join(generated, 'App.entitlements'), entitlements(appGroups));
+  await writeFile(join(generated, 'Extension.entitlements'), entitlements(extensionGroups));
+}
 
 async function build(): Promise<void> {
   await mkdir(join(appex, 'content-scripts'), { recursive: true });
@@ -75,13 +92,16 @@ async function build(): Promise<void> {
   await writeFile(join(app, 'PrivacyInfo.xcprivacy'), privacyManifest(['1C8F.1', 'CA92.1']));
   await writeFile(join(appex, 'PrivacyInfo.xcprivacy'), privacyManifest(['1C8F.1']));
   await writeFile(join(app, 'Assets.car'), '');
+  await writeGenerated(['$(NB_APP_GROUP)'], ['$(NB_APP_GROUP)']);
 }
 
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), 'verify-ios-'));
   app = join(root, 'NoBrainrot.app');
   appex = join(app, 'PlugIns', 'NoBrainrotExtension.appex');
+  generated = join(root, 'Generated');
   await mkdir(appex, { recursive: true });
+  await mkdir(generated);
 });
 
 afterEach(async () => {
@@ -91,12 +111,12 @@ afterEach(async () => {
 describe.skipIf(!onMac)('verifyBuiltApp', () => {
   it('accepts an app that is put together correctly', async () => {
     await build();
-    expect(await verifyBuiltApp(app, VERSION)).toEqual([]);
+    expect(await verifyBuiltApp(app, VERSION, generated)).toEqual([]);
   });
 
   it('notices a missing extension', async () => {
     await rm(appex, { recursive: true });
-    expect(await verifyBuiltApp(app, VERSION)).toEqual([
+    expect(await verifyBuiltApp(app, VERSION, generated)).toEqual([
       'The app does not embed NoBrainrotExtension.appex in PlugIns.',
     ]);
   });
@@ -117,12 +137,12 @@ describe.skipIf(!onMac)('verifyBuiltApp', () => {
   ])('notices when %s is missing', async (_label, file, problem) => {
     await build();
     await rm(join(appex, file));
-    expect(await verifyBuiltApp(app, VERSION)).toContain(problem);
+    expect(await verifyBuiltApp(app, VERSION, generated)).toContain(problem);
   });
 
   it('notices a version that differs from package.json', async () => {
     await build();
-    expect(await verifyBuiltApp(app, '9.9.9')).toEqual([
+    expect(await verifyBuiltApp(app, '9.9.9', generated)).toEqual([
       'The app is version 1.2.3, not 9.9.9 as in package.json.',
       'The extension is version 1.2.3, not 9.9.9 as in package.json.',
     ]);
@@ -131,7 +151,7 @@ describe.skipIf(!onMac)('verifyBuiltApp', () => {
   it("notices a privacy manifest that gives no reason for the app's own UserDefaults", async () => {
     await build();
     await writeFile(join(app, 'PrivacyInfo.xcprivacy'), privacyManifest(['1C8F.1']));
-    expect(await verifyBuiltApp(app, VERSION)).toEqual([
+    expect(await verifyBuiltApp(app, VERSION, generated)).toEqual([
       'The app privacy manifest gives no CA92.1 reason for UserDefaults.',
     ]);
   });
@@ -148,7 +168,7 @@ describe.skipIf(!onMac)('verifyBuiltApp', () => {
         ],
       }),
     );
-    const problems = await verifyBuiltApp(app, VERSION);
+    const problems = await verifyBuiltApp(app, VERSION, generated);
     expect(problems).toContain('manifest.json lacks the nativeMessaging permission.');
     expect(problems).toContain('No content script runs on https://m.youtube.com/*.');
   });
@@ -165,7 +185,7 @@ describe.skipIf(!onMac)('verifyBuiltApp', () => {
         ],
       }),
     );
-    expect(await verifyBuiltApp(app, VERSION)).toContain(
+    expect(await verifyBuiltApp(app, VERSION, generated)).toContain(
       'An Instagram content script is bundled; the iOS app supports YouTube only.',
     );
   });
@@ -181,7 +201,7 @@ describe.skipIf(!onMac)('verifyBuiltApp', () => {
         NBAppGroupIdentifier: 'group.somewhere.else',
       }),
     );
-    const problems = await verifyBuiltApp(app, VERSION);
+    const problems = await verifyBuiltApp(app, VERSION, generated);
     expect(problems).toContain('The app and the extension name different App Groups.');
     expect(problems).toContain('The app does not register the nobrainrot:// link.');
     expect(problems).toContain('The app cannot ask whether the YouTube app is installed.');
@@ -208,7 +228,23 @@ describe.skipIf(!onMac)('verifyBuiltApp', () => {
         }),
       );
     }
-    expect(await verifyBuiltApp(app, VERSION)).toEqual(['The app names no App Group.']);
+    expect(await verifyBuiltApp(app, VERSION, generated)).toEqual(['The app names no App Group.']);
+  });
+
+  it('notices a target whose entitlements do not grant its App Group', async () => {
+    await build();
+    await writeGenerated([], ['$(NB_APP_GROUP)']);
+    expect(await verifyBuiltApp(app, VERSION, generated)).toEqual([
+      'The app entitlements do not grant the App Group its Info.plist names.',
+    ]);
+  });
+
+  it('notices entitlements XcodeGen did not write', async () => {
+    await build();
+    await rm(join(generated, 'Extension.entitlements'));
+    expect(await verifyBuiltApp(app, VERSION, generated)).toEqual([
+      'The extension has no Extension.entitlements from XcodeGen.',
+    ]);
   });
 
   it('notices an extension that is not a Safari web extension', async () => {
@@ -221,7 +257,7 @@ describe.skipIf(!onMac)('verifyBuiltApp', () => {
         NBAppGroupIdentifier: 'group.io.example.app',
       }),
     );
-    const problems = await verifyBuiltApp(app, VERSION);
+    const problems = await verifyBuiltApp(app, VERSION, generated);
     expect(problems).toContain('The extension does not declare com.apple.Safari.web-extension.');
     expect(problems).toContain(
       'The extension has no SafariWebExtensionHandler as its principal class.',

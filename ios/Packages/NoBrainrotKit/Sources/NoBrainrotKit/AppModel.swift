@@ -1,3 +1,4 @@
+import CoreTransferable
 import Foundation
 import Observation
 
@@ -138,8 +139,10 @@ public final class AppModel {
         setupSeen = true
     }
 
-    /// The counters as plain text, for the person to share when they ask to.
-    public func countersExport() -> String {
+    /// The counters for the share sheet, for the person to share when they ask to.
+    public var countersExport: CountersExport { CountersExport(model: self) }
+
+    func countersExportText() -> String {
         counters.exportText(until: dependencies.now())
     }
 
@@ -155,5 +158,15 @@ public final class AppModel {
     /// The words for the current status; `relative` turns a date into "3 hours ago".
     public func statusCopy(relative: (Date) -> String) -> StatusCopy {
         StatusCopy.make(from: status, relative: relative)
+    }
+}
+
+/// What "Export counters" hands to the share sheet. The text is written when
+/// the share sheet asks for it, so the period it covers ends at that moment.
+public struct CountersExport: Transferable, Sendable {
+    let model: AppModel
+
+    public static var transferRepresentation: some TransferRepresentation {
+        ProxyRepresentation { (export: CountersExport) in await export.model.countersExportText() }
     }
 }

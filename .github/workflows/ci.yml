@@ -105,4 +105,4 @@ jobs:
             build
 
       - name: Check what was built
-        run: node tools/verify-ios-build.ts ios/build/Build/Products/Debug-iphonesimulator/NoBrainrot.app
+        run: node tools/verify-ios-build.ts ios/build/Build/Products/Debug-iphonesimulator/NoBrainrot.app ios/Generated

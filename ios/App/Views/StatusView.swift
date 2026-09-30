@@ -48,7 +48,7 @@ struct StatusView: View {
                 ForEach(model.counters.rows) { row in
                     LabeledContent(row.label, value: row.count, format: .number)
                 }
-                ShareLink(item: model.countersExport()) {
+                ShareLink(item: model.countersExport, preview: SharePreview("No Brainrot counters")) {
                     Label("Export counters", systemImage: "square.and.arrow.up")
                 }
             } header: {

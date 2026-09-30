@@ -12,6 +12,21 @@ private final class FakeOpener: URLOpening {
     }
 }
 
+private final class TestClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var current: Date
+
+    init(_ start: Date) {
+        current = start
+    }
+
+    var now: Date { lock.withLock { current } }
+
+    func advance(by seconds: TimeInterval) {
+        lock.withLock { current += seconds }
+    }
+}
+
 @MainActor
 @Suite("App model")
 struct AppModelTests {
@@ -28,7 +43,7 @@ struct AppModelTests {
         youtubeAppInstalled: Bool? = nil,
         storageAvailable: Bool = true,
         preferences reused: UserDefaults? = nil,
-        now: Date = Date(timeIntervalSince1970: 1_700_000_100)
+        now: @escaping @Sendable () -> Date = { Date(timeIntervalSince1970: 1_700_000_100) }
     ) -> Rig {
         let store = FakeStore(settings: stored, contact: contact)
         let opener = FakeOpener()
@@ -40,7 +55,7 @@ struct AppModelTests {
             opener: opener,
             youtubeAppInstalled: { youtubeAppInstalled },
             preferences: preferences,
-            now: { now }
+            now: now
         ))
         return Rig(model: model, store: store, opener: opener, preferences: preferences)
     }
@@ -198,7 +213,7 @@ struct AppModelTests {
         let first = rig()
         await first.model.openCleanYouTube()
         first.model.change { $0.settingFeature("ytShorts", enabled: false) }
-        let later = rig(preferences: first.preferences, now: Date(timeIntervalSince1970: 1_800_000_000))
+        let later = rig(preferences: first.preferences, now: { Date(timeIntervalSince1970: 1_800_000_000) })
         #expect(later.model.counters == first.model.counters)
         #expect(later.model.counters.since == Date(timeIntervalSince1970: 1_700_000_100))
     }
@@ -207,7 +222,7 @@ struct AppModelTests {
         let rig = rig()
         await rig.model.openCleanYouTube()
         rig.model.change { $0.settingFeature("ytShorts", enabled: false) }
-        #expect(rig.model.countersExport() == """
+        #expect(rig.model.countersExportText() == """
         No Brainrot counters
         From 2023-11-14T22:15:00Z to 2023-11-14T22:15:00Z
         Opened YouTube in Safari from this app: 1
@@ -215,5 +230,23 @@ struct AppModelTests {
         Hiding switches turned off in this app: 1
         Only what you do in the No Brainrot app is counted. It cannot see Safari, the YouTube app or what you watch.
         """)
+    }
+
+    @Test func theSharedExportEndsWhenItIsShared() async throws {
+        let clock = TestClock(Date(timeIntervalSince1970: 1_700_000_100))
+        let rig = rig(now: { clock.now })
+        let export = rig.model.countersExport
+        clock.advance(by: 3 * 24 * 60 * 60)
+        let lines = try await shared(export).split(separator: "\n")
+        #expect(lines.dropFirst().first == "From 2023-11-14T22:15:00Z to 2023-11-17T22:15:00Z")
+    }
+
+    /// What an app picking the export from the share sheet receives.
+    private func shared(_ export: CountersExport) async throws -> String {
+        let provider = NSItemProvider()
+        provider.register(export)
+        return try await withCheckedThrowingContinuation { continuation in
+            _ = provider.loadTransferable(type: String.self) { continuation.resume(with: $0) }
+        }
     }
 }
