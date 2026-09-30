@@ -106,8 +106,10 @@ say.
 
 ## Good to know
 
-- It works in desktop browsers. The YouTube and Instagram phone apps are not
-  affected.
+- It works in desktop browsers. An iPhone app that adds the same YouTube
+  filtering to Safari is in development (see
+  [CONTRIBUTING.md](CONTRIBUTING.md#iphone-app-safari)) and is not released.
+  The YouTube and Instagram phone apps are not affected by either.
 - YouTube and Instagram change their pages from time to time, which can let
   something slip through. If it does, please
   [open an issue](https://github.com/lpedenon/no-brainrot/issues/new/choose).

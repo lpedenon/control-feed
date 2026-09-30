@@ -13,4 +13,19 @@ No Brainrot does not collect, send or sell any data.
 - **Permissions:** `storage`, to keep your settings. Access to `youtube.com` and
   `instagram.com` pages, to hide content on them. Nothing else.
 
+## iPhone app (in development)
+
+The iPhone app and its Safari extension follow the same rules, and nothing
+leaves the phone.
+
+- **Settings** are shared between the app and its extension on the device,
+  through an Apple App Group. There is no account, server or analytics.
+- **What the extension tells the app**, using Safari's native messaging (not the
+  network): its settings, its version, whether it ran on `m.youtube.com` or
+  `www.youtube.com`, and whether Safari lets it read those sites. This is how the
+  app shows its status. It never sends addresses, titles, channels watched or
+  searches.
+- **Permissions:** `storage` and `nativeMessaging`, plus access to
+  `youtube.com` pages that you grant in Safari.
+
 Questions: open an issue at https://github.com/lpedenon/no-brainrot/issues.

@@ -31,3 +31,13 @@ test-results
 playwright-report
 e2e/.auth
 .screens
+
+# iOS app: the Xcode project and its Info.plist and entitlements are generated
+# from ios/project.yml; Swift package build output stays local.
+ios/*.xcodeproj
+ios/Generated
+ios/Packages/*/.build
+ios/Packages/*/.swiftpm
+xcuserdata
+DerivedData
+ios/build

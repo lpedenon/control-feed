@@ -28,7 +28,8 @@ pnpm dev:firefox  # same for Firefox
 | --- | --- |
 | `pnpm check` | Typecheck, lint (Biome) and unit tests |
 | `pnpm test:coverage` | Unit tests with coverage (80% minimum) |
-| `pnpm test:e2e` | Builds, then runs the extension in Chromium against captured pages |
+| `pnpm test:e2e` | Builds, then runs the extension in Chromium against captured pages, desktop and iPhone-sized |
+| `pnpm ios:test` | The Swift package's tests (macOS with the Swift toolchain) |
 | `pnpm test:live` | Builds, then runs the extension against the real sites |
 
 CI runs everything except `test:live`, because the real sites throttle CI
@@ -49,9 +50,12 @@ src/
     tile-filter.ts   watches the page and marks tiles your filters reject
     site-runner.ts   ties styles, redirects and filtering together per site
   sites/youtube/   hide rules, redirects, tile parsing and filter policy
+    mobile/          the same for m.youtube.com, which has its own page structure
   sites/instagram/ hide rules and redirects
   options/         settings page
-  entrypoints/     content scripts, background worker, settings page
+  native/          the Safari extension's link to the iOS app (see below)
+  entrypoints/     content scripts, background worker, settings page, Safari popup
+ios/               the iPhone app that packages the Safari build (see below)
 ```
 
 - Hiding is done with CSS injected at `document_start`, so hidden content never
@@ -65,15 +69,67 @@ src/
 To add a switch, add it to `src/core/features.ts`, then give it hide rules or a
 redirect in the site's folder. The settings page picks it up automatically.
 
+## iPhone app (Safari)
+
+`ios/` holds an iPhone app that carries the extension as a Safari Web Extension
+and gives it a native settings screen. It is iOS only, YouTube only, and needs
+no account or server.
+
+```
+ios/
+  project.yml            XcodeGen spec; the Xcode project is generated, not committed
+  Config/Shared.xcconfig bundle ids, App Group and version (placeholders until the app is enrolled)
+  App/                   SwiftUI app: status, rules, the Shortcuts gate, help, first-run setup
+  Extension/             the Safari extension's native handler
+  Packages/NoBrainrotKit settings model, sync, status logic and their Swift tests
+  Scripts/               copies the built web extension into the extension bundle
+```
+
+How it fits together:
+
+- `pnpm build:safari` builds the web extension for Safari (`.output/safari-mv2`).
+  It is the same code as the desktop build, plus a bridge in `src/native/`: the
+  extension cannot be pushed to by the app, so it asks the app for its settings
+  when it starts and when a YouTube page loads, and the later change wins. It
+  also tells the app which YouTube host it ran on and whether Safari lets it
+  read the site, never an address or a title. The app shows that as "seen
+  working", never as "protected".
+- The Swift package repeats the settings rules. `pnpm ios:contract` generates
+  `ContractData.swift` and the test vectors from the TypeScript, and both
+  test suites check their own code against them. Run it after changing
+  `src/core/features.ts`, `topics.ts`, `settings.ts` or the protocol, and commit the result.
+  Do not edit the generated files by hand.
+- The gate is a Shortcuts personal automation that opens m.youtube.com when the
+  YouTube app opens. iOS does not let an app create one or check for one, and
+  an App Intent cannot open Safari, so the app only explains the steps.
+- `pnpm ios:project` builds the web extension and generates `ios/NoBrainrot.xcodeproj`
+  (install [XcodeGen](https://github.com/yonaskolb/XcodeGen) first). Open it in
+  Xcode, pick a team under Signing for both targets and run on a device. Turn the
+  extension on in Settings, then allow it on YouTube from Safari's aA menu.
+
+What is checked where. The Swift tests, the web extension's unit tests and the
+Chromium tests (`pnpm test:e2e`, which loads the Safari flavour with an iPhone
+user agent and a stand-in for the app) run anywhere. The CI `ios` job also
+builds the app for the iOS Simulator without signing and inspects the result.
+Nothing runs the app or Safari's own extension host in CI: how Safari grants
+site access, wakes the background page and hands over native messages, the
+Shortcuts gate, and the layout on a real iPhone still need a person with a
+device.
+
+Known limits: YouTube's own "Open App" button still appears on some phone
+pages, and the YouTube app is not changed at all.
+
 ## When a site changes its layout
 
 Selectors avoid generated class names and rely on tag names, link targets and
 accessibility labels, which change less often. When one breaks:
 
 1. `node e2e/tools/capture-youtube-fixtures.ts` saves fresh snapshots of
-   YouTube pages to `e2e/fixtures/youtube/`.
+   YouTube pages to `e2e/fixtures/youtube/`; add `--mobile` for the phone site
+   (`e2e/fixtures/youtube-mobile/`).
 2. `pnpm test` and `pnpm test:e2e` show what no longer matches.
-3. Fix the rule in `src/sites/<site>/`, then confirm with `pnpm test:live`.
+3. Fix the rule in `src/sites/<site>/` (`mobile/` for the phone site), then
+   confirm with `pnpm test:live`.
 
 Live Instagram tests need a logged-in session. Run
 `node e2e/tools/instagram-login.ts` once and log in in the window that opens.
@@ -92,6 +148,9 @@ Release notes are written from them.
    `git tag -a v0.2.0` (write the highlights in the editor).
 3. `git push --follow-tags`.
 
+Also update `MARKETING_VERSION` in `ios/Config/Shared.xcconfig`; a unit test
+fails if it differs from `package.json`.
+
 The Release workflow checks that the tag matches `package.json`, runs every
 test, builds the Chrome and Firefox packages and publishes them on a GitHub
-release.
+release. It does not build or publish the iPhone app.

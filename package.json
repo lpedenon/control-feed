@@ -31,6 +31,9 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "wxt build && pnpm build:safari-mv3 && playwright test --project=fixtures",
     "test:live": "wxt build && pnpm build:safari-mv3 && playwright test --project=live",
+    "ios:contract": "vitest run src/native/contract.test.ts -u",
+    "ios:test": "swift test --package-path ios/Packages/NoBrainrotKit",
+    "ios:project": "pnpm build:safari && cd ios && xcodegen generate",
     "check": "pnpm typecheck && pnpm lint && pnpm test",
     "postinstall": "wxt prepare"
   },

@@ -7,7 +7,12 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!e2e/fixtures"]
+    "includes": [
+      "**",
+      "!e2e/fixtures",
+      "!ios/App/Resources/Assets.xcassets",
+      "!ios/Packages/NoBrainrotKit/Tests/NoBrainrotKitTests/Resources"
+    ]
   },
   "formatter": {
     "enabled": true,

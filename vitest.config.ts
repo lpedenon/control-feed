@@ -4,7 +4,7 @@ import { WxtVitest } from 'wxt/testing/vitest-plugin';
 export default defineConfig({
   plugins: [WxtVitest()],
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'tools/**/*.test.ts'],
     environment: 'jsdom',
     restoreMocks: true,
     coverage: {

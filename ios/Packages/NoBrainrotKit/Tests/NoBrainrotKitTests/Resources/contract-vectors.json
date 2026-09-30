@@ -1,0 +1,906 @@
+{
+  "generatedBy": "pnpm ios:contract - generated from src/native/contract.ts, do not edit by hand",
+  "protocolVersion": 1,
+  "syncRequestExample": {
+    "type": "sync",
+    "protocolVersion": 1,
+    "extensionVersion": "1.2.3",
+    "reason": "page",
+    "settings": {
+      "sites": {
+        "youtube": true,
+        "instagram": true
+      },
+      "features": {
+        "ytHomeFeed": true,
+        "ytShorts": true,
+        "ytExplore": true,
+        "ytRelated": true,
+        "ytEndScreen": true,
+        "ytComments": true,
+        "igFollowingFeed": true,
+        "igReels": true,
+        "igExplore": true,
+        "igSuggested": true
+      },
+      "youtubeFilters": {
+        "blockedKeywords": [],
+        "blockedChannels": [],
+        "allowedChannels": [],
+        "onlyAllowedChannels": false,
+        "topicMode": "off",
+        "topics": []
+      }
+    },
+    "settingsUpdatedAt": 1700000000000,
+    "siteAccess": {
+      "m.youtube.com": "granted",
+      "www.youtube.com": "not-granted"
+    },
+    "pageHost": "m.youtube.com"
+  },
+  "syncResponseExample": {
+    "ok": true,
+    "protocolVersion": 1,
+    "appVersion": "1.0",
+    "settings": {
+      "sites": {
+        "youtube": true,
+        "instagram": true
+      },
+      "features": {
+        "ytHomeFeed": true,
+        "ytShorts": false,
+        "ytExplore": true,
+        "ytRelated": true,
+        "ytEndScreen": true,
+        "ytComments": false,
+        "igFollowingFeed": true,
+        "igReels": true,
+        "igExplore": true,
+        "igSuggested": true
+      },
+      "youtubeFilters": {
+        "blockedKeywords": [],
+        "blockedChannels": [],
+        "allowedChannels": [],
+        "onlyAllowedChannels": false,
+        "topicMode": "off",
+        "topics": []
+      }
+    },
+    "settingsUpdatedAt": 1700000000001
+  },
+  "syncRefusalExample": {
+    "ok": false,
+    "error": "unsupported-protocol"
+  },
+  "vectors": {
+    "parseSettings": [
+      {
+        "name": "nothing",
+        "input": null,
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": false,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [],
+            "blockedChannels": [],
+            "allowedChannels": [],
+            "onlyAllowedChannels": false,
+            "topicMode": "off",
+            "topics": []
+          }
+        }
+      },
+      {
+        "name": "not an object",
+        "input": "settings",
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": false,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [],
+            "blockedChannels": [],
+            "allowedChannels": [],
+            "onlyAllowedChannels": false,
+            "topicMode": "off",
+            "topics": []
+          }
+        }
+      },
+      {
+        "name": "an array",
+        "input": [
+          1,
+          2,
+          3
+        ],
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": false,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [],
+            "blockedChannels": [],
+            "allowedChannels": [],
+            "onlyAllowedChannels": false,
+            "topicMode": "off",
+            "topics": []
+          }
+        }
+      },
+      {
+        "name": "empty object",
+        "input": {},
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": false,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [],
+            "blockedChannels": [],
+            "allowedChannels": [],
+            "onlyAllowedChannels": false,
+            "topicMode": "off",
+            "topics": []
+          }
+        }
+      },
+      {
+        "name": "wrong types everywhere",
+        "input": {
+          "sites": {
+            "youtube": "yes",
+            "instagram": 3
+          },
+          "features": {
+            "ytShorts": "maybe",
+            "ytComments": 1
+          },
+          "youtubeFilters": {
+            "blockedKeywords": "prank",
+            "onlyAllowedChannels": "true",
+            "topicMode": "sometimes",
+            "topics": "AI"
+          }
+        },
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": false,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [],
+            "blockedChannels": [],
+            "allowedChannels": [],
+            "onlyAllowedChannels": false,
+            "topicMode": "off",
+            "topics": []
+          }
+        }
+      },
+      {
+        "name": "one bad value leaves the rest alone",
+        "input": {
+          "features": {
+            "ytShorts": "maybe",
+            "ytComments": true,
+            "ytExplore": false
+          }
+        },
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": false,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": true,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [],
+            "blockedChannels": [],
+            "allowedChannels": [],
+            "onlyAllowedChannels": false,
+            "topicMode": "off",
+            "topics": []
+          }
+        }
+      },
+      {
+        "name": "lists are trimmed, collapsed and de-duplicated",
+        "input": {
+          "youtubeFilters": {
+            "blockedKeywords": [
+              "  Prank ",
+              "prank",
+              "You   won’t believe",
+              "",
+              3,
+              null,
+              "PRANK"
+            ],
+            "blockedChannels": [
+              "@Some.Channel",
+              "@some.channel",
+              "Other  Channel"
+            ],
+            "allowedChannels": [
+              "École Polytechnique",
+              "ÉCOLE POLYTECHNIQUE",
+              "école polytechnique"
+            ]
+          }
+        },
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": false,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [
+              "Prank",
+              "You won’t believe"
+            ],
+            "blockedChannels": [
+              "@Some.Channel",
+              "Other Channel"
+            ],
+            "allowedChannels": [
+              "École Polytechnique"
+            ],
+            "onlyAllowedChannels": false,
+            "topicMode": "off",
+            "topics": []
+          }
+        }
+      },
+      {
+        "name": "topics are cleaned and de-duplicated by name",
+        "input": {
+          "youtubeFilters": {
+            "topicMode": "only",
+            "topics": [
+              {
+                "name": "  AI ",
+                "keywords": [
+                  "LLM",
+                  "llm",
+                  " GPT "
+                ]
+              },
+              {
+                "name": "ai",
+                "keywords": [
+                  "duplicate"
+                ]
+              },
+              {
+                "name": "",
+                "keywords": [
+                  "nameless"
+                ]
+              },
+              {
+                "name": "Café",
+                "keywords": "not a list"
+              },
+              {
+                "keywords": [
+                  "no name"
+                ]
+              },
+              "not a topic",
+              {
+                "name": "Cafe",
+                "keywords": [
+                  "second spelling"
+                ]
+              }
+            ]
+          }
+        },
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": false,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [],
+            "blockedChannels": [],
+            "allowedChannels": [],
+            "onlyAllowedChannels": false,
+            "topicMode": "only",
+            "topics": [
+              {
+                "name": "AI",
+                "keywords": [
+                  "LLM",
+                  "GPT"
+                ]
+              },
+              {
+                "name": "Café",
+                "keywords": []
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "everything valid",
+        "input": {
+          "sites": {
+            "youtube": false,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": false,
+            "ytShorts": false,
+            "ytComments": true,
+            "igReels": false
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [
+              "a"
+            ],
+            "blockedChannels": [
+              "b"
+            ],
+            "allowedChannels": [
+              "c"
+            ],
+            "onlyAllowedChannels": true,
+            "topicMode": "block",
+            "topics": [
+              {
+                "name": "Gaming",
+                "keywords": [
+                  "gameplay"
+                ]
+              }
+            ]
+          }
+        },
+        "expected": {
+          "sites": {
+            "youtube": false,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": false,
+            "ytShorts": false,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": true,
+            "igFollowingFeed": true,
+            "igReels": false,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [
+              "a"
+            ],
+            "blockedChannels": [
+              "b"
+            ],
+            "allowedChannels": [
+              "c"
+            ],
+            "onlyAllowedChannels": true,
+            "topicMode": "block",
+            "topics": [
+              {
+                "name": "Gaming",
+                "keywords": [
+                  "gameplay"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "unknown keys are dropped",
+        "input": {
+          "extra": 1,
+          "features": {
+            "nope": true
+          }
+        },
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": false,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [],
+            "blockedChannels": [],
+            "allowedChannels": [],
+            "onlyAllowedChannels": false,
+            "topicMode": "off",
+            "topics": []
+          }
+        }
+      }
+    ],
+    "normalizeList": [
+      {
+        "input": [],
+        "expected": []
+      },
+      {
+        "input": [
+          "a",
+          "A",
+          " a  "
+        ],
+        "expected": [
+          "a"
+        ]
+      },
+      {
+        "input": [
+          "  spaced   out  ",
+          "spaced out"
+        ],
+        "expected": [
+          "spaced out"
+        ]
+      },
+      {
+        "input": [
+          "",
+          "   ",
+          "\t"
+        ],
+        "expected": []
+      },
+      {
+        "input": [
+          "École",
+          "ÉCOLE",
+          "école",
+          "Ecole"
+        ],
+        "expected": [
+          "École",
+          "Ecole"
+        ]
+      },
+      {
+        "input": [
+          "Straße",
+          "STRASSE",
+          "strasse"
+        ],
+        "expected": [
+          "Straße",
+          "STRASSE"
+        ]
+      },
+      {
+        "input": [
+          "İstanbul",
+          "i̇stanbul"
+        ],
+        "expected": [
+          "İstanbul"
+        ]
+      },
+      {
+        "input": [
+          "ΑΒΓ",
+          "αβγ",
+          "ΑΒς",
+          "αβσ"
+        ],
+        "expected": [
+          "ΑΒΓ",
+          "ΑΒς",
+          "αβσ"
+        ]
+      },
+      {
+        "input": [
+          "日本語",
+          "日本語 "
+        ],
+        "expected": [
+          "日本語"
+        ]
+      },
+      {
+        "input": [
+          "line\nbreak",
+          "line break"
+        ],
+        "expected": [
+          "line break"
+        ]
+      }
+    ],
+    "sameTopicName": [
+      {
+        "a": "AI",
+        "b": "ai",
+        "expected": true
+      },
+      {
+        "a": "AI",
+        "b": " A I ",
+        "expected": false
+      },
+      {
+        "a": "Café",
+        "b": "Cafe",
+        "expected": true
+      },
+      {
+        "a": "Café",
+        "b": "CAFÉ",
+        "expected": true
+      },
+      {
+        "a": "ＡＩ",
+        "b": "ai",
+        "expected": true
+      },
+      {
+        "a": "Gaming",
+        "b": "Gamer",
+        "expected": false
+      },
+      {
+        "a": "",
+        "b": " ",
+        "expected": true
+      },
+      {
+        "a": "Straße",
+        "b": "strasse",
+        "expected": false
+      }
+    ],
+    "edits": [
+      {
+        "name": "switches",
+        "operations": [
+          {
+            "op": "feature",
+            "key": "ytShorts",
+            "enabled": false
+          },
+          {
+            "op": "feature",
+            "key": "ytComments",
+            "enabled": true
+          },
+          {
+            "op": "site",
+            "site": "youtube",
+            "enabled": false
+          }
+        ],
+        "expected": {
+          "sites": {
+            "youtube": false,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": false,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": true,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [],
+            "blockedChannels": [],
+            "allowedChannels": [],
+            "onlyAllowedChannels": false,
+            "topicMode": "off",
+            "topics": []
+          }
+        }
+      },
+      {
+        "name": "list edits are cleaned",
+        "operations": [
+          {
+            "op": "filters",
+            "patch": {
+              "blockedKeywords": [
+                "  Prank ",
+                "prank",
+                "Reaction"
+              ]
+            }
+          },
+          {
+            "op": "filters",
+            "patch": {
+              "onlyAllowedChannels": true,
+              "allowedChannels": [
+                "@a",
+                "@A"
+              ]
+            }
+          }
+        ],
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": false,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [
+              "Prank",
+              "Reaction"
+            ],
+            "blockedChannels": [],
+            "allowedChannels": [
+              "@a"
+            ],
+            "onlyAllowedChannels": true,
+            "topicMode": "off",
+            "topics": []
+          }
+        }
+      },
+      {
+        "name": "topics: preset, custom, duplicate, keywords, remove",
+        "operations": [
+          {
+            "op": "filters",
+            "patch": {
+              "topicMode": "only"
+            }
+          },
+          {
+            "op": "topicAdd",
+            "name": "ai"
+          },
+          {
+            "op": "topicAdd",
+            "name": "  Woodworking  "
+          },
+          {
+            "op": "topicAdd",
+            "name": "AI"
+          },
+          {
+            "op": "topicAdd",
+            "name": "   "
+          },
+          {
+            "op": "topicKeywords",
+            "name": "woodworking",
+            "keywords": [
+              "dovetail",
+              "Dovetail",
+              " jig "
+            ]
+          },
+          {
+            "op": "topicKeywords",
+            "name": "missing",
+            "keywords": [
+              "ignored"
+            ]
+          },
+          {
+            "op": "topicRemove",
+            "name": "AI"
+          },
+          {
+            "op": "topicRemove",
+            "name": "missing"
+          }
+        ],
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": false,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [],
+            "blockedChannels": [],
+            "allowedChannels": [],
+            "onlyAllowedChannels": false,
+            "topicMode": "only",
+            "topics": [
+              {
+                "name": "Woodworking",
+                "keywords": [
+                  "dovetail",
+                  "jig"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "a bad patch is repaired rather than stored",
+        "operations": [
+          {
+            "op": "filters",
+            "patch": {
+              "topicMode": "sometimes",
+              "blockedKeywords": []
+            }
+          }
+        ],
+        "expected": {
+          "sites": {
+            "youtube": true,
+            "instagram": true
+          },
+          "features": {
+            "ytHomeFeed": true,
+            "ytShorts": true,
+            "ytExplore": true,
+            "ytRelated": true,
+            "ytEndScreen": true,
+            "ytComments": false,
+            "igFollowingFeed": true,
+            "igReels": true,
+            "igExplore": true,
+            "igSuggested": true
+          },
+          "youtubeFilters": {
+            "blockedKeywords": [],
+            "blockedChannels": [],
+            "allowedChannels": [],
+            "onlyAllowedChannels": false,
+            "topicMode": "off",
+            "topics": []
+          }
+        }
+      }
+    ]
+  }
+}
