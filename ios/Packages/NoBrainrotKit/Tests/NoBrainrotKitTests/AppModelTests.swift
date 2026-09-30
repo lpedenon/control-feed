@@ -3,12 +3,10 @@ import Testing
 @testable import NoBrainrotKit
 
 @MainActor
-private final class FakeOpener: URLOpening {
-    var opened: [URL] = []
-    var accepts = true
-    func open(_ url: URL) async -> Bool {
-        opened.append(url)
-        return accepts
+private final class FakeCopier: TextCopying {
+    var copied: [String] = []
+    func copy(_ text: String) {
+        copied.append(text)
     }
 }
 
@@ -33,7 +31,7 @@ struct AppModelTests {
     private struct Rig {
         let model: AppModel
         let store: FakeStore
-        let opener: FakeOpener
+        let copier: FakeCopier
         let preferences: UserDefaults
     }
 
@@ -46,18 +44,18 @@ struct AppModelTests {
         now: @escaping @Sendable () -> Date = { Date(timeIntervalSince1970: 1_700_000_100) }
     ) -> Rig {
         let store = FakeStore(settings: stored, contact: contact)
-        let opener = FakeOpener()
+        let copier = FakeCopier()
         let preferences = reused ?? UserDefaults(suiteName: "no-brainrot-model-\(UUID().uuidString)")!
         let model = AppModel(dependencies: AppDependencies(
             repository: SettingsRepository(store: store, now: { Date(timeIntervalSince1970: 1_700_000_000) }),
             contacts: store,
             sharedStorageAvailable: storageAvailable,
-            opener: opener,
+            copier: copier,
             youtubeAppInstalled: { youtubeAppInstalled },
             preferences: preferences,
             now: now
         ))
-        return Rig(model: model, store: store, opener: opener, preferences: preferences)
+        return Rig(model: model, store: store, copier: copier, preferences: preferences)
     }
 
     @Test func startsFromDefaultsAndNotSetUp() {
@@ -126,29 +124,22 @@ struct AppModelTests {
         #expect(rig.model.status.level == .working)
     }
 
-    @Test func opensCleanYouTubeInSafari() async {
+    @Test func copiesTheAddressWithoutClaimingSafariRan() {
         let rig = rig()
-        await rig.model.openCleanYouTube()
-        #expect(rig.opener.opened == [URL(string: "https://m.youtube.com/")!])
-        #expect(rig.model.launchFailure == nil)
+        let before = rig.model.status
+        rig.model.copyCleanYouTubeAddress()
+        #expect(rig.copier.copied == ["https://m.youtube.com/"])
+        #expect(rig.model.status == before)
+        #expect(rig.model.counters.addressCopies == 1)
+        #expect(rig.model.counters.urlDispatches == 0)
     }
 
-    @Test func saysSoWhenTheHandoffFails() async {
-        let rig = rig()
-        rig.opener.accepts = false
-        await rig.model.openCleanYouTube()
-        #expect(rig.model.launchFailure?.contains("m.youtube.com") == true)
-        rig.opener.accepts = true
-        await rig.model.openCleanYouTube()
-        #expect(rig.model.launchFailure == nil)
-    }
-
-    @Test func aFailureCanBeDismissedToo() async {
-        let rig = rig()
-        rig.opener.accepts = false
-        await rig.model.openCleanYouTube()
-        rig.model.dismissLaunchFailure()
-        #expect(rig.model.launchFailure == nil)
+    @Test func emitsTheManualSafariFlowText() {
+        #expect(SafariFlow.copyLabel == "Copy YouTube address")
+        #expect(SafariFlow.copiedLabel == "Copied YouTube address")
+        #expect(SafariFlow.instructions == "Copy the address, open Safari yourself, then paste it into Safari's address bar and go. No Brainrot works only in Safari with the extension enabled and allowed on YouTube. Copying does not open Safari or confirm protection.")
+        #expect(SafariFlow.shortcutDescription == "An optional iPhone Shortcut can try to open the YouTube address when you open the YouTube app. Open URLs does not force Safari: your default browser or the YouTube app may open instead. For No Brainrot, use the manual Safari steps below. You can turn the automation off at any time; it is a nudge, not a lock.")
+        #expect(SafariFlow.shortcutCheck == "Open the YouTube app and check where the automation sends you. If it opens another browser or returns to the YouTube app, it is not using No Brainrot. Turn the automation off and use the manual Safari steps instead. This app cannot check the destination.")
     }
 
     @Test func theGateNoteIsRememberedAndShownInTheStatus() {
@@ -184,12 +175,41 @@ struct AppModelTests {
         #expect(copy.headline == "Not set up yet")
     }
 
-    @Test func countsOnlyTheSafariOpensIOSAccepted() async {
+    @Test func countsEachCopyActionRatherThanSafariUse() {
         let rig = rig()
-        await rig.model.openCleanYouTube()
-        rig.opener.accepts = false
-        await rig.model.openCleanYouTube()
-        #expect(rig.model.counters.safariOpens == 1)
+        rig.model.copyCleanYouTubeAddress()
+        rig.model.copyCleanYouTubeAddress()
+        #expect(rig.copier.copied == [SafariFlow.address, SafariFlow.address])
+        #expect(rig.model.counters.addressCopies == 2)
+        #expect(rig.model.counters.urlDispatches == 0)
+    }
+
+    @Test func preservesAndRelabelsTheLegacyHandoffCounts() throws {
+        let since = Date(timeIntervalSince1970: 1_700_000_100)
+        let preferences = UserDefaults(suiteName: "no-brainrot-legacy-\(UUID().uuidString)")!
+        let legacy = try JSONSerialization.data(withJSONObject: [
+            "since": since.timeIntervalSinceReferenceDate,
+            "safariOpens": 7,
+            "ruleChanges": 3,
+            "hidingSwitchesTurnedOff": 2,
+        ] as [String: Any])
+        preferences.set(legacy, forKey: AppModel.countersKey)
+        let first = rig(preferences: preferences)
+        #expect(first.model.counters == LocalCounters(since: since, urlDispatches: 7, ruleChanges: 3, hidingSwitchesTurnedOff: 2))
+        #expect(first.model.counters.rows[1] == LocalCounters.Row(label: "YouTube URL handoffs accepted by iOS (earlier app versions)", count: 7))
+        first.model.copyCleanYouTubeAddress()
+        first.model.change { $0.settingFeature("ytShorts", enabled: false) }
+        let restarted = rig(preferences: preferences)
+        #expect(restarted.model.counters == LocalCounters(since: since, urlDispatches: 7, addressCopies: 1, ruleChanges: 4, hidingSwitchesTurnedOff: 3))
+        #expect(restarted.model.countersExportText() == """
+        No Brainrot counters
+        From 2023-11-14T22:15:00Z to 2023-11-14T22:15:00Z
+        YouTube addresses copied in this app: 1
+        YouTube URL handoffs accepted by iOS (earlier app versions): 7
+        Rule changes saved in this app: 4
+        Hiding switches turned off in this app: 3
+        Only actions in the No Brainrot app are counted, not Safari use or protection. It cannot see Safari, the YouTube app or what you watch.
+        """)
     }
 
     @Test func countsSavedRuleChangesAndTheHidingSwitchesTurnedOff() {
@@ -209,26 +229,27 @@ struct AppModelTests {
         #expect(rig.model.counters == LocalCounters(since: Date(timeIntervalSince1970: 1_700_000_100)))
     }
 
-    @Test func theCountersAndWhenCountingBeganSurviveARestart() async {
+    @Test func theCountersAndWhenCountingBeganSurviveARestart() {
         let first = rig()
-        await first.model.openCleanYouTube()
+        first.model.copyCleanYouTubeAddress()
         first.model.change { $0.settingFeature("ytShorts", enabled: false) }
         let later = rig(preferences: first.preferences, now: { Date(timeIntervalSince1970: 1_800_000_000) })
         #expect(later.model.counters == first.model.counters)
         #expect(later.model.counters.since == Date(timeIntervalSince1970: 1_700_000_100))
     }
 
-    @Test func exportsTheTotalsAndThePeriodOnly() async {
+    @Test func exportsTheTotalsAndThePeriodOnly() {
         let rig = rig()
-        await rig.model.openCleanYouTube()
+        rig.model.copyCleanYouTubeAddress()
         rig.model.change { $0.settingFeature("ytShorts", enabled: false) }
         #expect(rig.model.countersExportText() == """
         No Brainrot counters
         From 2023-11-14T22:15:00Z to 2023-11-14T22:15:00Z
-        Opened YouTube in Safari from this app: 1
+        YouTube addresses copied in this app: 1
+        YouTube URL handoffs accepted by iOS (earlier app versions): 0
         Rule changes saved in this app: 1
         Hiding switches turned off in this app: 1
-        Only what you do in the No Brainrot app is counted. It cannot see Safari, the YouTube app or what you watch.
+        Only actions in the No Brainrot app are counted, not Safari use or protection. It cannot see Safari, the YouTube app or what you watch.
         """)
     }
 

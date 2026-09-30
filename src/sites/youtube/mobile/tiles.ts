@@ -1,4 +1,4 @@
-import { type ChannelIdentity, parseChannelEntry } from '../../../core/text-match';
+import type { ChannelIdentity } from '../../../core/text-match';
 import type { TileSource } from '../../../core/tile-filter';
 import { outermostMatch } from '../shared';
 import { pageChannel, type YoutubeTileInfo } from '../tiles';
@@ -64,11 +64,10 @@ function readChannelName(tile: Element): string | null {
 }
 
 function readChannel(tile: Element): ChannelIdentity {
-  const ref = parseChannelEntry(
-    tile.querySelector(CHANNEL_LINK_SELECTOR)?.getAttribute('href') ?? '',
-  );
-  const handle = ref.kind === 'handle' ? ref.value : null;
-  const id = ref.kind === 'id' ? ref.value : null;
+  const href = tile.querySelector(CHANNEL_LINK_SELECTOR)?.getAttribute('href') ?? '';
+  const urlHandle = /^\/@([^/?#]+)/.exec(href)?.[1];
+  const handle = urlHandle ? decodeURIComponent(urlHandle).toLowerCase() : null;
+  const id = /^\/channel\/(UC[\w-]{22})/.exec(href)?.[1] ?? null;
   return { name: readChannelName(tile), handle, id };
 }
 

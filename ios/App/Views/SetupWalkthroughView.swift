@@ -30,14 +30,7 @@ struct SetupWalkthroughView: View {
                     }
                     Step(number: 2, title: "Allow it on YouTube") {
                         Explainer("In Safari, open m.youtube.com. Tap the aA button, choose No Brainrot, then Always Allow. Only you can grant this: the app cannot do it for you.")
-                        Button {
-                            Task { await model.openCleanYouTube() }
-                        } label: {
-                            Label("Open YouTube in Safari", systemImage: "safari")
-                        }
-                        if let failure = model.launchFailure {
-                            Banner(text: failure, dismiss: model.dismissLaunchFailure)
-                        }
+                        CleanYouTubeAddress()
                     }
                     Step(number: 3, title: "Check that it worked") {
                         Explainer("Come back to this app. It shows when the extension last ran on a YouTube page. That is the only check the app has, so it can take a moment after you visit.")
@@ -47,7 +40,7 @@ struct SetupWalkthroughView: View {
                         Button("Check again") { model.refresh() }
                     }
                     Step(number: 4, title: "Add the gate (optional)") {
-                        Explainer("The gate is an iPhone Shortcut that sends you to YouTube in Safari when you open the YouTube app. You can set it up now or later in the Gate tab.")
+                        Explainer(SafariFlow.shortcutDescription)
                         Button("Set up the gate") {
                             finish()
                             goToGate()

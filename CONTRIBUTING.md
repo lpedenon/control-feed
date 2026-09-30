@@ -99,9 +99,11 @@ How it fits together:
   test suites check their own code against them. Run it after changing
   `src/core/features.ts`, `topics.ts`, `settings.ts` or the protocol, and commit the result.
   Do not edit the generated files by hand.
-- The gate is a Shortcuts personal automation that opens m.youtube.com when the
-  YouTube app opens. iOS does not let an app create one or check for one, and
-  an App Intent cannot open Safari, so the app only explains the steps.
+- The supported YouTube route is manual: copy the address in the app, open
+  Safari yourself and paste it into the address bar. The optional Shortcuts
+  app-opened automation uses generic Open URLs, which may open the default
+  browser or the native YouTube app, not Safari. The guide explains those
+  limits; the app cannot create an automation or check its destination.
 - `pnpm ios:project` builds the web extension and generates `ios/NoBrainrot.xcodeproj`
   (install [XcodeGen](https://github.com/yonaskolb/XcodeGen) first). Open it in
   Xcode, pick a team under Signing for both targets and run on a device. Turn the
@@ -114,7 +116,9 @@ builds the app for the iOS Simulator without signing and inspects the result.
 Nothing runs the app or Safari's own extension host in CI: how Safari grants
 site access, wakes the background page and hands over native messages, the
 Shortcuts gate, and the layout on a real iPhone still need a person with a
-device.
+device. The manual copy/paste flow and the automation with a non-Safari default
+browser or YouTube Universal Links have not been validated on an iPhone.
+Package tests check copy signals and emitted instructions, not iOS routing.
 
 Known limits: YouTube's own "Open App" button still appears on some phone
 pages, and the YouTube app is not changed at all.

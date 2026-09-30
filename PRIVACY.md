@@ -25,10 +25,11 @@ leaves the phone.
   `www.youtube.com`, and whether Safari lets it read those sites. This is how the
   app shows its status. It never sends addresses, titles, channels watched or
   searches.
-- **Counters** kept by the app, on the phone: how often you opened YouTube in
-  Safari from the app, saved rule changes, and hiding switches turned off in
-  the app. The app cannot see Safari, the YouTube app or what you watch, so it
-  counts nothing else. "Export counters" hands a plain-text summary of the
+- **Counters** kept by the app, on the phone: YouTube address copy actions,
+  saved rule changes, and hiding switches turned off in the app. Earlier app
+  versions' URL handoff counts are preserved as addresses accepted by iOS,
+  not confirmed Safari opens. None of these counts confirms Safari use or
+  protection. The app cannot see Safari, the YouTube app or what you watch. "Export counters" hands a plain-text summary of the
   totals to the iOS share sheet, only when you tap it.
 - **Permissions:** `storage` and `nativeMessaging`, plus access to
   `youtube.com` pages that you grant in Safari.

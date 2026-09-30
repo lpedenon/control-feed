@@ -2,11 +2,8 @@ import CoreTransferable
 import Foundation
 import Observation
 
-/// Opens an address outside the app. The real one hands it to the system;
-/// tests use a fake.
-public protocol URLOpening: Sendable {
-    /// Whether the system accepted the address.
-    @MainActor func open(_ url: URL) async -> Bool
+public protocol TextCopying: Sendable {
+    @MainActor func copy(_ text: String)
 }
 
 public struct AppDependencies {
@@ -14,7 +11,7 @@ public struct AppDependencies {
     public let contacts: any ContactStoring
     /// False when the storage shared with the Safari extension cannot be reached.
     public let sharedStorageAvailable: Bool
-    public let opener: any URLOpening
+    public let copier: any TextCopying
     /// Whether the YouTube app is on this iPhone, or nil when that cannot be told.
     public let youtubeAppInstalled: @MainActor () -> Bool?
     /// Small notes of the person's own that never leave the app.
@@ -25,7 +22,7 @@ public struct AppDependencies {
         repository: SettingsRepository,
         contacts: any ContactStoring,
         sharedStorageAvailable: Bool,
-        opener: any URLOpening,
+        copier: any TextCopying,
         youtubeAppInstalled: @escaping @MainActor () -> Bool?,
         preferences: UserDefaults,
         now: @escaping @Sendable () -> Date = { Date() }
@@ -33,7 +30,7 @@ public struct AppDependencies {
         self.repository = repository
         self.contacts = contacts
         self.sharedStorageAvailable = sharedStorageAvailable
-        self.opener = opener
+        self.copier = copier
         self.youtubeAppInstalled = youtubeAppInstalled
         self.preferences = preferences
         self.now = now
@@ -44,7 +41,6 @@ public struct AppDependencies {
 @MainActor
 @Observable
 public final class AppModel {
-    public static let cleanYouTubeURL = URL(string: "https://m.youtube.com/")!
     static let setupSeenKey = "setupSeen"
     static let gateMarkedKey = "gateMarkedSetUp"
     static let countersKey = "counters.v1"
@@ -52,7 +48,6 @@ public final class AppModel {
     public private(set) var settings: ExtensionSettings
     public private(set) var status: StatusReport
     public private(set) var saveFailure: String?
-    public private(set) var launchFailure: String?
     public private(set) var setupSeen: Bool
     public private(set) var gateMarkedSetUp: Bool
     public private(set) var counters: LocalCounters
@@ -114,18 +109,9 @@ public final class AppModel {
         saveFailure = nil
     }
 
-    public func openCleanYouTube() async {
-        launchFailure = nil
-        let opened = await dependencies.opener.open(Self.cleanYouTubeURL)
-        if opened {
-            count(counters.countingSafariOpen())
-        } else {
-            launchFailure = "Safari could not be opened. Open m.youtube.com in Safari yourself."
-        }
-    }
-
-    public func dismissLaunchFailure() {
-        launchFailure = nil
+    public func copyCleanYouTubeAddress() {
+        dependencies.copier.copy(SafariFlow.address)
+        count(counters.countingAddressCopy())
     }
 
     public func setGateMarked(_ marked: Bool) {

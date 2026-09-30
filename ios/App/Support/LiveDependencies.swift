@@ -3,7 +3,7 @@ import NoBrainrotKit
 
 extension AppDependencies {
     /// The app's real surroundings: storage shared with the Safari extension
-    /// through the App Group named in Info.plist, and the system for opening links.
+    /// through the App Group named in Info.plist, and the system clipboard.
     @MainActor
     static func live(bundle: Bundle = .main) -> AppDependencies {
         let group = bundle.object(forInfoDictionaryKey: "NBAppGroupIdentifier") as? String ?? ""
@@ -14,7 +14,7 @@ extension AppDependencies {
             repository: SettingsRepository(store: store),
             contacts: store,
             sharedStorageAvailable: shared != nil,
-            opener: SystemURLOpener(),
+            copier: SystemTextCopier(),
             youtubeAppInstalled: { Platform.canOpen(URL(string: "youtube://")!) },
             preferences: .standard
         )

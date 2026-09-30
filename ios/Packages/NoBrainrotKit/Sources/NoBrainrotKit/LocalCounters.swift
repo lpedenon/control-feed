@@ -7,24 +7,43 @@ import Foundation
 public struct LocalCounters: Codable, Equatable, Sendable {
     /// When counting began on this phone.
     public let since: Date
-    /// Taps on "Open YouTube in Safari" that iOS accepted.
-    public let safariOpens: Int
+    public let urlDispatches: Int
+    public let addressCopies: Int
     /// Rule changes saved in this app.
     public let ruleChanges: Int
     /// "Hide" switches, or the whole site, turned off in this app.
     public let hidingSwitchesTurnedOff: Int
 
-    public init(since: Date, safariOpens: Int = 0, ruleChanges: Int = 0, hidingSwitchesTurnedOff: Int = 0) {
+    public init(since: Date, urlDispatches: Int = 0, addressCopies: Int = 0, ruleChanges: Int = 0, hidingSwitchesTurnedOff: Int = 0) {
         self.since = since
-        self.safariOpens = safariOpens
+        self.urlDispatches = urlDispatches
+        self.addressCopies = addressCopies
         self.ruleChanges = ruleChanges
         self.hidingSwitchesTurnedOff = hidingSwitchesTurnedOff
     }
 
-    public func countingSafariOpen() -> LocalCounters {
+    private enum CodingKeys: String, CodingKey {
+        case since
+        case urlDispatches = "safariOpens"
+        case addressCopies
+        case ruleChanges
+        case hidingSwitchesTurnedOff
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        since = try values.decode(Date.self, forKey: .since)
+        urlDispatches = try values.decode(Int.self, forKey: .urlDispatches)
+        addressCopies = try values.decodeIfPresent(Int.self, forKey: .addressCopies) ?? 0
+        ruleChanges = try values.decode(Int.self, forKey: .ruleChanges)
+        hidingSwitchesTurnedOff = try values.decode(Int.self, forKey: .hidingSwitchesTurnedOff)
+    }
+
+    public func countingAddressCopy() -> LocalCounters {
         LocalCounters(
             since: since,
-            safariOpens: safariOpens + 1,
+            urlDispatches: urlDispatches,
+            addressCopies: addressCopies + 1,
             ruleChanges: ruleChanges,
             hidingSwitchesTurnedOff: hidingSwitchesTurnedOff
         )
@@ -33,7 +52,8 @@ public struct LocalCounters: Codable, Equatable, Sendable {
     public func countingChange(from old: ExtensionSettings, to new: ExtensionSettings) -> LocalCounters {
         LocalCounters(
             since: since,
-            safariOpens: safariOpens,
+            urlDispatches: urlDispatches,
+            addressCopies: addressCopies,
             ruleChanges: ruleChanges + 1,
             hidingSwitchesTurnedOff: hidingSwitchesTurnedOff
                 + Self.turnedOff(old.sites, new.sites)
@@ -50,14 +70,15 @@ public struct LocalCounters: Codable, Equatable, Sendable {
     /// The labelled counts, in the order they are shown and exported.
     public var rows: [Row] {
         [
-            Row(label: "Opened YouTube in Safari from this app", count: safariOpens),
+            Row(label: "YouTube addresses copied in this app", count: addressCopies),
+            Row(label: "YouTube URL handoffs accepted by iOS (earlier app versions)", count: urlDispatches),
             Row(label: "Rule changes saved in this app", count: ruleChanges),
             Row(label: "Hiding switches turned off in this app", count: hidingSwitchesTurnedOff),
         ]
     }
 
     public static let scopeNote =
-        "Only what you do in the No Brainrot app is counted. It cannot see Safari, the YouTube app or what you watch."
+        "Only actions in the No Brainrot app are counted, not Safari use or protection. It cannot see Safari, the YouTube app or what you watch."
 
     /// The totals as plain text for the person to share themselves. Nothing but
     /// the counts and the period they cover.

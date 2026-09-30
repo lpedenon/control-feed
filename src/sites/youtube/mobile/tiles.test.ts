@@ -173,6 +173,64 @@ describe('describeMobileTile edge cases', () => {
     expect(describeMobileTile(tile, null)?.channel.id).toBe('UC1234567890123456789012');
   });
 
+  it.each(['math·studio', 'math%C2%B7studio'])(
+    'preserves the complete handle from /@%s in tiles and page-owner fallbacks',
+    (handle) => {
+      const doc = new DOMParser().parseFromString(
+        `<ytm-video-with-context-renderer>
+          <a href="/@${handle}/videos?view=0#top"></a>
+          <h3>Matrices explained</h3>
+          <ytm-badge-and-byline-renderer><span dir="auto">Math Studio</span></ytm-badge-and-byline-renderer>
+        </ytm-video-with-context-renderer>`,
+        'text/html',
+      );
+      const tile = doc.querySelector('ytm-video-with-context-renderer') as Element;
+      const info = describeMobileTile(tile, null);
+      expect(info?.channel).toEqual({ name: 'Math Studio', handle: 'math·studio', id: null });
+      const owner = pageChannel(new URL(`https://m.youtube.com/@${handle}/videos`), doc);
+      tile.querySelector('a')?.remove();
+      tile.querySelector('ytm-badge-and-byline-renderer')?.remove();
+      const inherited = describeMobileTile(tile, owner);
+      expect(inherited?.channel.handle).toBe('math·studio');
+      for (const channelInfo of [info, inherited]) {
+        expect(
+          createYoutubeDecider(withFilters({ blockedChannels: ['@math'] }))?.(channelInfo),
+        ).toBeNull();
+        expect(
+          createYoutubeDecider(
+            withFilters({ allowedChannels: ['@math'], blockedKeywords: ['matrices'] }),
+          )?.(channelInfo),
+        ).toBe('blocked-keyword');
+        expect(
+          createYoutubeDecider(
+            withFilters({
+              allowedChannels: ['@math'],
+              topicMode: 'block',
+              topics: [{ name: 'Matrices', keywords: ['matrices'] }],
+            }),
+          )?.(channelInfo),
+        ).toBe('blocked-topic');
+        expect(
+          createYoutubeDecider(
+            withFilters({ allowedChannels: ['@math'], onlyAllowedChannels: true }),
+          )?.(channelInfo),
+        ).toBe('not-allowed-channel');
+      }
+      const prefix = {
+        title: 'Matrices explained',
+        channel: { name: 'Math', handle: 'math', id: null },
+      };
+      expect(createYoutubeDecider(withFilters({ blockedChannels: ['@math'] }))?.(prefix)).toBe(
+        'blocked-channel',
+      );
+      expect(
+        createYoutubeDecider(
+          withFilters({ allowedChannels: ['@math'], blockedKeywords: ['matrices'] }),
+        )?.(prefix),
+      ).toBeNull();
+    },
+  );
+
   it('looks up the page channel from the live URL', () => {
     const doc = loadFixture('youtube-mobile', 'channel-videos');
     const source = youtubeMobileTileSource(

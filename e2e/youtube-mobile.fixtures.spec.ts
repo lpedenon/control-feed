@@ -151,6 +151,55 @@ test.describe('search', () => {
     expect(await visibleCount(page, 'ytm-video-with-context-renderer')).toBeGreaterThan(3);
   });
 
+  for (const handle of ['math·studio', 'math%C2%B7studio']) {
+    test(`keeps /@${handle} distinct from @math in channel filters`, async ({
+      page,
+      setSettings,
+    }) => {
+      await setSettings(withYoutubeFilters(DEFAULT_SETTINGS, { blockedKeywords: ['matrices'] }));
+      await openPage(page, SEARCH);
+      await page.evaluate((href) => {
+        const tile = document.createElement('ytm-video-with-context-renderer');
+        tile.id = 'handle-regression';
+        tile.innerHTML = `<a href="/@${href}">Math Studio</a><h3>Matrices explained</h3>
+          <ytm-badge-and-byline-renderer><span dir="auto">Math Studio</span></ytm-badge-and-byline-renderer>`;
+        document.querySelector('ytm-item-section-renderer')?.append(tile);
+      }, handle);
+      const tile = page.locator('#handle-regression');
+      await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-keyword');
+
+      await setSettings(withYoutubeFilters(DEFAULT_SETTINGS, { blockedChannels: ['@math'] }));
+      await expect(tile).toBeVisible();
+      await expect(tile).not.toHaveAttribute(HIDDEN_ATTRIBUTE);
+
+      await setSettings(
+        withYoutubeFilters(DEFAULT_SETTINGS, {
+          allowedChannels: ['@math'],
+          blockedKeywords: ['matrices'],
+        }),
+      );
+      await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-keyword');
+      await expect(tile).toBeHidden();
+
+      await setSettings(
+        withYoutubeFilters(DEFAULT_SETTINGS, {
+          allowedChannels: ['@math'],
+          topicMode: 'block',
+          topics: [{ name: 'Matrices', keywords: ['matrices'] }],
+        }),
+      );
+      await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-topic');
+
+      await setSettings(
+        withYoutubeFilters(DEFAULT_SETTINGS, {
+          allowedChannels: ['@math'],
+          onlyAllowedChannels: true,
+        }),
+      );
+      await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'not-allowed-channel');
+    });
+  }
+
   test('with only allowed channels on, shows nothing else', async ({ page, setSettings }) => {
     await setSettings(
       withYoutubeFilters(DEFAULT_SETTINGS, {

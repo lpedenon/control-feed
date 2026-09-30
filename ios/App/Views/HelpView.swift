@@ -11,6 +11,11 @@ struct HelpView: View {
                 Explainer("No Brainrot is a Safari extension. On YouTube in Safari it hides Shorts, the home feed, recommended videos and other endless lists, and it filters videos by channel, word and topic. This app is where you change the rules and see whether the extension is running.")
             }
 
+            Section("Use YouTube in Safari") {
+                CleanYouTubeAddress()
+                Explainer(SafariFlow.shortcutDescription)
+            }
+
             Section("What it does not do") {
                 bullet("It does not change the YouTube app, other browsers or other websites.")
                 bullet("It cannot switch itself on. iOS makes you turn the extension on and allow it on YouTube yourself.")
@@ -28,7 +33,7 @@ struct HelpView: View {
             }
 
             Section("Privacy") {
-                Explainer("Your rules are stored on this iPhone and shared only between this app and its Safari extension. There is no account, no analytics and no server. The extension tells the app when it ran, which YouTube address type it ran on (m.youtube.com or www.youtube.com), its version and what Safari says about site access. It never sends what you watch or search for. The app also counts a few things you do in it, such as opening YouTube in Safari from it. Those counts stay on this iPhone unless you export them yourself.")
+                Explainer("Your rules are stored on this iPhone and shared only between this app and its Safari extension. There is no account, no analytics and no server. The extension tells the app when it ran, which YouTube address type it ran on (m.youtube.com or www.youtube.com), its version and what Safari says about site access. It never sends what you watch or search for. The app also counts a few things you do in it, such as copying the YouTube address. Old URL handoff counts only mean iOS accepted an address, not that Safari opened or protection was on. Those counts stay on this iPhone unless you export them yourself.")
                 Link("Read the privacy policy", destination: Self.privacy)
             }
 

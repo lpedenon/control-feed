@@ -19,11 +19,7 @@ struct StatusView: View {
             }
 
             Section {
-                Button {
-                    Task { await model.openCleanYouTube() }
-                } label: {
-                    Label("Open YouTube in Safari", systemImage: "safari")
-                }
+                CleanYouTubeAddress()
                 if model.status.level != .working {
                     Button {
                         showSetup = true
@@ -31,11 +27,8 @@ struct StatusView: View {
                         Label("Set up the extension", systemImage: "list.number")
                     }
                 }
-                if let failure = model.launchFailure {
-                    Banner(text: failure, dismiss: model.dismissLaunchFailure)
-                }
-            } footer: {
-                Text("Opens m.youtube.com in Safari, where the extension works.")
+            } header: {
+                Text("Open YouTube in Safari yourself")
             }
 
             Section("Details") {

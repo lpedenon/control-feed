@@ -1,4 +1,24 @@
+import NoBrainrotKit
 import SwiftUI
+
+struct CleanYouTubeAddress: View {
+    @Environment(AppModel.self) private var model
+    @State private var copied = false
+
+    var body: some View {
+        Text(SafariFlow.address)
+            .font(.body.monospaced())
+            .textSelection(.enabled)
+        Button {
+            model.copyCleanYouTubeAddress()
+            copied = true
+        } label: {
+            Label(copied ? SafariFlow.copiedLabel : SafariFlow.copyLabel,
+                  systemImage: copied ? "checkmark" : "doc.on.doc")
+        }
+        Explainer(SafariFlow.instructions)
+    }
+}
 
 /// A numbered instruction. The number and title are read as one item, and any
 /// buttons the step needs stay separate so they remain reachable.
