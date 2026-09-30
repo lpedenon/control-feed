@@ -73,6 +73,33 @@ describe('parseChannelEntry', () => {
     expect(parseChannelEntry('@3Blue1Brown')).toEqual({ kind: 'handle', value: '3blue1brown' });
   });
 
+  it.each([
+    '@Math·Studio',
+    '@Math%C2%B7Studio',
+    '/@Math·Studio/videos',
+    '/@Math%C2%B7Studio/videos',
+    'https://m.youtube.com/@Math·Studio/videos?view=0#top',
+    'https://www.youtube.com/@Math%C2%B7Studio/videos?view=0#top',
+  ])('reads the complete literal or encoded handle from %s', (entry) => {
+    expect(parseChannelEntry(`  ${entry}  `)).toEqual({ kind: 'handle', value: 'math·studio' });
+  });
+
+  it.each(['@Café', '@Caf%C3%A9', '@数学', '@%E6%95%B0%E5%AD%A6'])(
+    'reads supported non-ASCII handles from %s',
+    (entry) => {
+      const expected = entry.startsWith('@Caf') ? 'café' : '数学';
+      expect(parseChannelEntry(entry)).toEqual({ kind: 'handle', value: expected });
+    },
+  );
+
+  it.each(['@math%', '@math%ZZstudio', 'https://m.youtube.com/@math%C2/videos'])(
+    'treats invalid handle encoding as a name without throwing: %s',
+    (entry) => {
+      expect(parseChannelEntry(entry)).toEqual({ kind: 'name', value: normalizeText(entry) });
+      expect(compileChannelMatcher([entry])(channel({ handle: 'other-channel' }))).toBe(false);
+    },
+  );
+
   it('reads channel ids', () => {
     expect(parseChannelEntry('UCYO_jab_esuFRV4b17AJtAw')).toEqual({
       kind: 'id',
@@ -115,6 +142,19 @@ describe('compileChannelMatcher', () => {
     const matches = compileChannelMatcher(['@mitocw']);
     expect(matches(channel({ name: 'MIT OpenCourseWare', handle: 'mitocw' }))).toBe(true);
     expect(matches(channel({ name: 'Other', handle: 'other' }))).toBe(false);
+  });
+
+  it.each([
+    '@math·studio',
+    '@math%C2%B7studio',
+    'https://m.youtube.com/@math·studio/videos?view=0#top',
+    'https://www.youtube.com/@math%C2%B7studio/videos?view=0#top',
+  ])('matches %s to the complete identity rather than its prefix', (entry) => {
+    const matches = compileChannelMatcher([entry]);
+    expect(matches(channel({ handle: 'math·studio' }))).toBe(true);
+    expect(matches(channel({ handle: 'math' }))).toBe(false);
+    expect(matches(channel({ name: 'Math', handle: 'math' }))).toBe(false);
+    expect(compileChannelMatcher(['@math'])(channel({ handle: 'math·studio' }))).toBe(false);
   });
 
   it('matches an @handle against a name that spells the same', () => {

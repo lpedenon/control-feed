@@ -84,6 +84,23 @@ struct SettingsTests {
         #expect(ExtensionSettings.parse(try settings.toJSON()) == settings)
     }
 
+    @Test func completeHandleSpellingsSurviveChannelListEditsAndJSONStorage() throws {
+        let entries = [
+            "@Math·Studio",
+            "@math%C2%B7studio",
+            "https://m.youtube.com/@Math·Studio/videos",
+            "https://www.youtube.com/@math%C2%B7studio/videos",
+        ]
+        let edited = ExtensionSettings.defaults()
+            .settingList(.blockedChannels, to: entries)
+            .settingList(.allowedChannels, to: entries)
+            .settingOnlyAllowedChannels(true)
+        let stored = ExtensionSettings.parse(try edited.toJSON())
+        #expect(stored.entries(in: .blockedChannels) == entries)
+        #expect(stored.entries(in: .allowedChannels) == entries)
+        #expect(stored.youtubeFilters.onlyAllowedChannels)
+    }
+
     @Test func groupsFollowTheOrderOfTheCatalog() {
         let groups = Catalog.shared.featureGroups(forSite: "youtube")
         #expect(groups.map(\.name) == ["Browsing", "While watching"])

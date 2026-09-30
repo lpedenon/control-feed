@@ -228,6 +228,37 @@ describe('describeMobileTile edge cases', () => {
           withFilters({ allowedChannels: ['@math'], blockedKeywords: ['matrices'] }),
         )?.(prefix),
       ).toBeNull();
+      for (const rule of [
+        '@math·studio',
+        '@math%C2%B7studio',
+        'https://m.youtube.com/@math·studio/videos?view=0#top',
+        'https://www.youtube.com/@math%C2%B7studio/videos?view=0#top',
+      ]) {
+        const blocked = createYoutubeDecider(withFilters({ blockedChannels: [rule] }));
+        const allowedKeywords = createYoutubeDecider(
+          withFilters({ allowedChannels: [rule], blockedKeywords: ['matrices'] }),
+        );
+        const allowedTopics = createYoutubeDecider(
+          withFilters({
+            allowedChannels: [rule],
+            topicMode: 'block',
+            topics: [{ name: 'Matrices', keywords: ['matrices'] }],
+          }),
+        );
+        const onlyAllowed = createYoutubeDecider(
+          withFilters({ allowedChannels: [rule], onlyAllowedChannels: true }),
+        );
+        for (const channelInfo of [info, inherited]) {
+          expect(blocked?.(channelInfo), rule).toBe('blocked-channel');
+          expect(allowedKeywords?.(channelInfo), rule).toBeNull();
+          expect(allowedTopics?.(channelInfo), rule).toBeNull();
+          expect(onlyAllowed?.(channelInfo), rule).toBeNull();
+        }
+        expect(blocked?.(prefix), rule).toBeNull();
+        expect(allowedKeywords?.(prefix), rule).toBe('blocked-keyword');
+        expect(allowedTopics?.(prefix), rule).toBe('blocked-topic');
+        expect(onlyAllowed?.(prefix), rule).toBe('not-allowed-channel');
+      }
     },
   );
 

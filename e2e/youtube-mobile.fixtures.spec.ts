@@ -163,7 +163,11 @@ test.describe('search', () => {
         tile.id = 'handle-regression';
         tile.innerHTML = `<a href="/@${href}">Math Studio</a><h3>Matrices explained</h3>
           <ytm-badge-and-byline-renderer><span dir="auto">Math Studio</span></ytm-badge-and-byline-renderer>`;
-        document.querySelector('ytm-item-section-renderer')?.append(tile);
+        const prefix = document.createElement('ytm-video-with-context-renderer');
+        prefix.id = 'prefix-regression';
+        prefix.innerHTML = `<a href="/@math">Math</a><h3>Matrices explained</h3>
+          <ytm-badge-and-byline-renderer><span dir="auto">Math</span></ytm-badge-and-byline-renderer>`;
+        document.querySelector('ytm-item-section-renderer')?.append(tile, prefix);
       }, handle);
       const tile = page.locator('#handle-regression');
       await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-keyword');
@@ -197,6 +201,66 @@ test.describe('search', () => {
         }),
       );
       await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'not-allowed-channel');
+      const prefix = page.locator('#prefix-regression');
+      await expect(prefix).toBeVisible();
+
+      for (const rule of [
+        '@math·studio',
+        '@math%C2%B7studio',
+        'https://m.youtube.com/@math·studio/videos?view=0#top',
+        'https://www.youtube.com/@math%C2%B7studio/videos?view=0#top',
+      ]) {
+        await setSettings(withYoutubeFilters(DEFAULT_SETTINGS, { blockedChannels: [rule] }));
+        await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-channel');
+        await expect(tile).toBeHidden();
+        await expect(prefix).toBeVisible();
+
+        await setSettings(
+          withYoutubeFilters(DEFAULT_SETTINGS, {
+            allowedChannels: [rule],
+            blockedKeywords: ['matrices'],
+          }),
+        );
+        await expect(tile).toBeVisible();
+        await expect(tile).not.toHaveAttribute(HIDDEN_ATTRIBUTE);
+        await expect(prefix).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-keyword');
+
+        await setSettings(
+          withYoutubeFilters(DEFAULT_SETTINGS, {
+            topicMode: 'block',
+            topics: [{ name: 'Matrices', keywords: ['matrices'] }],
+          }),
+        );
+        await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-topic');
+        await setSettings(
+          withYoutubeFilters(DEFAULT_SETTINGS, {
+            allowedChannels: [rule],
+            topicMode: 'block',
+            topics: [{ name: 'Matrices', keywords: ['matrices'] }],
+          }),
+        );
+        await expect(tile).toBeVisible();
+        await expect(tile).not.toHaveAttribute(HIDDEN_ATTRIBUTE);
+        await expect(prefix).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-topic');
+
+        await setSettings(
+          withYoutubeFilters(DEFAULT_SETTINGS, {
+            allowedChannels: ['@math'],
+            onlyAllowedChannels: true,
+          }),
+        );
+        await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'not-allowed-channel');
+        await expect(prefix).toBeVisible();
+        await setSettings(
+          withYoutubeFilters(DEFAULT_SETTINGS, {
+            allowedChannels: [rule],
+            onlyAllowedChannels: true,
+          }),
+        );
+        await expect(tile).toBeVisible();
+        await expect(tile).not.toHaveAttribute(HIDDEN_ATTRIBUTE);
+        await expect(prefix).toHaveAttribute(HIDDEN_ATTRIBUTE, 'not-allowed-channel');
+      }
     });
   }
 
