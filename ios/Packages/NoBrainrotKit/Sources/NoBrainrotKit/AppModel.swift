@@ -37,7 +37,7 @@ public struct AppDependencies {
     }
 }
 
-/// What every screen shows and changes. The views hold no logic of their own.
+/// Shared settings, status and persistence for the app's screens.
 @MainActor
 @Observable
 public final class AppModel {

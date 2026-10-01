@@ -71,9 +71,10 @@ redirect in the site's folder. The settings page picks it up automatically.
 
 ## iPhone app (Safari)
 
-`ios/` holds an iPhone app that carries the extension as a Safari Web Extension
-and gives it a native settings screen. It is iOS only, YouTube only, and needs
-no account or server.
+`ios/` packages the Safari Web Extension and its native settings screen.
+For supported behavior, setup and the voluntary gate, see the
+[README's iPhone guide](README.md#iphone-app-in-development); data handling is
+owned by [PRIVACY.md](PRIVACY.md#iphone-app-in-development).
 
 ```
 ios/
@@ -89,39 +90,34 @@ How it fits together:
 
 - `pnpm build:safari` builds the web extension for Safari (`.output/safari-mv2`).
   It is the same code as the desktop build, plus a bridge in `src/native/`: the
-  extension cannot be pushed to by the app, so it asks the app for its settings
-  when it starts and when a YouTube page loads, and the later change wins. It
-  also tells the app which YouTube host it ran on and whether Safari lets it
-  read the site, never an address or a title. The app shows that as "seen
-  working", never as "protected".
+  extension cannot be pushed to by the app, so it pulls settings through the
+  protocol owned by `src/native/protocol.ts`. For reconciliation rules, see
+  `src/native/sync.ts` and the Swift `SyncService`. Native status logic and
+  wording live in
+  `ios/Packages/NoBrainrotKit/Sources/NoBrainrotKit/Status.swift`.
 - The Swift package repeats the settings rules. `pnpm ios:contract` generates
   `ContractData.swift` and the test vectors from the TypeScript, and both
   test suites check their own code against them. Run it after changing
   `src/core/features.ts`, `topics.ts`, `settings.ts` or the protocol, and commit the result.
   Do not edit the generated files by hand.
-- The supported YouTube route is manual: copy the address in the app, open
-  Safari yourself and paste it into the address bar. The optional Shortcuts
-  app-opened automation uses generic Open URLs, which may open the default
-  browser or the native YouTube app, not Safari. The guide explains those
-  limits; the app cannot create an automation or check its destination.
 - `pnpm ios:project` builds the web extension and generates `ios/NoBrainrot.xcodeproj`
   (install [XcodeGen](https://github.com/yonaskolb/XcodeGen) first). Open it in
-  Xcode, pick a team under Signing for both targets and run on a device. Turn the
-  extension on in Settings, then allow it on YouTube from Safari's aA menu.
+  Xcode, pick a team under Signing for both targets, register their shared App
+  Group as described in `ios/Config/Shared.xcconfig`, and run on a device.
+  Then follow the [user setup steps](README.md#iphone-app-in-development).
 
-What is checked where. The Swift tests, the web extension's unit tests and the
-Chromium tests (`pnpm test:e2e`, which loads the Safari flavour with an iPhone
-user agent and a stand-in for the app) run anywhere. The CI `ios` job also
-builds the app for the iOS Simulator without signing and inspects the result.
+What is checked where. The web unit tests and Chromium tests run with the web
+toolchain; `pnpm test:e2e` loads the Safari flavour as MV3 with an iPhone user
+agent and a stand-in for the app. Swift package tests require macOS and Swift
+as declared in `ios/Packages/NoBrainrotKit/Package.swift`; they do not compile
+`ios/App/`. The CI `ios` job also builds the app for the iOS Simulator without
+signing and inspects the result.
 Nothing runs the app or Safari's own extension host in CI: how Safari grants
 site access, wakes the background page and hands over native messages, the
 Shortcuts gate, and the layout on a real iPhone still need a person with a
 device. The manual copy/paste flow and the automation with a non-Safari default
 browser or YouTube Universal Links have not been validated on an iPhone.
 Package tests check copy signals and emitted instructions, not iOS routing.
-
-Known limits: YouTube's own "Open App" button still appears on some phone
-pages, and the YouTube app is not changed at all.
 
 ## When a site changes its layout
 
@@ -155,6 +151,7 @@ Release notes are written from them.
 Also update `MARKETING_VERSION` in `ios/Config/Shared.xcconfig`; the CI `ios`
 job fails if the built app's version differs from `package.json`.
 
-The Release workflow checks that the tag matches `package.json`, runs every
-test, builds the Chrome and Firefox packages and publishes them on a GitHub
-release. It does not build or publish the iPhone app.
+The Release workflow checks that the tag matches `package.json`, runs web
+typechecking, lint, unit and fixture E2E checks, builds the Chrome and Firefox
+packages and publishes them on a GitHub release. It does not run Swift tests,
+build or publish the iPhone app.

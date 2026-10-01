@@ -21,7 +21,7 @@ const SPACED_SCRIPT_EDGE = /[\p{Script=Latin}\p{Script=Cyrillic}\p{Script=Greek}
 const WORD_CHAR_BEFORE = '(?<![\\p{L}\\p{N}])';
 const WORD_CHAR_AFTER = '(?![\\p{L}\\p{N}])';
 
-/** Case-, accent- and width-insensitive form used for every comparison. */
+/** Case-, accent- and width-insensitive form used for names, keywords and topics. */
 export function normalizeText(text: string): string {
   return text
     .normalize('NFKD')
