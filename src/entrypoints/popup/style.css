@@ -1,0 +1,77 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f6f5fa;
+  --text: #17152a;
+  --muted: #5f5b72;
+  --accent: #5b2ee6;
+  --on-accent: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121019;
+    --text: #ebe8f4;
+    --muted: #a09bb2;
+    --accent: #9d7bff;
+    --on-accent: #121019;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+main {
+  min-width: 260px;
+  max-width: 340px;
+  margin: 0 auto;
+  padding: 20px 16px 24px;
+  text-align: center;
+}
+
+.mark {
+  border-radius: 12px;
+}
+
+h1 {
+  margin: 8px 0 4px;
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 650;
+}
+
+p {
+  margin: 0 0 16px;
+  color: var(--muted);
+  text-wrap: balance;
+}
+
+.button {
+  display: inline-block;
+  min-height: 44px;
+  padding: 10px 22px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.fine {
+  margin: 14px 0 0;
+  font-size: 13px;
+}

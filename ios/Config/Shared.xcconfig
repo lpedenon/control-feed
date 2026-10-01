@@ -1,0 +1,13 @@
+// Identity and version shared by the app and its Safari extension.
+//
+// The identifiers are placeholders under the maintainer's GitHub namespace, so
+// the project builds without owning a domain or an Apple Developer account.
+// When the app is enrolled for distribution, change them here and register
+// the same App Group for both targets.
+NB_BUNDLE_ID = io.github.lpedenon.nobrainrot
+NB_EXTENSION_BUNDLE_ID = io.github.lpedenon.nobrainrot.extension
+NB_APP_GROUP = group.io.github.lpedenon.nobrainrot
+
+// Must equal package.json; tools/verify-ios-build.ts checks the built app.
+MARKETING_VERSION = 0.2.0
+CURRENT_PROJECT_VERSION = 1

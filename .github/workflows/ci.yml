@@ -39,8 +39,8 @@ jobs:
       - name: Unit tests with coverage
         run: pnpm test:coverage
 
-      - name: Build for Chrome and Firefox
-        run: pnpm build && pnpm build:firefox
+      - name: Build for Chrome, Firefox and Safari
+        run: pnpm build && pnpm build:firefox && pnpm build:safari && pnpm build:safari-mv3
 
       - name: Install Chromium for end-to-end tests
         run: pnpm exec playwright install --with-deps chromium
@@ -57,3 +57,52 @@ jobs:
           name: playwright-results
           path: test-results
           retention-days: 7
+
+  ios:
+    name: iOS app (Swift tests, simulator build)
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Swift package tests
+        run: pnpm ios:test
+
+      - name: Check the built-app verifier
+        run: pnpm exec vitest run tools
+
+      - name: Build the Safari web extension
+        run: pnpm build:safari
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate the Xcode project
+        run: cd ios && xcodegen generate
+
+      # Unsigned: this proves the project, the Swift code and the embedded web
+      # extension build for the iOS Simulator SDK. It does not run the app.
+      - name: Build for the iOS Simulator
+        run: |
+          xcodebuild \
+            -project ios/NoBrainrot.xcodeproj \
+            -scheme NoBrainrot \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath ios/build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Check what was built
+        run: node tools/verify-ios-build.ts ios/build/Build/Products/Debug-iphonesimulator/NoBrainrot.app ios/Generated

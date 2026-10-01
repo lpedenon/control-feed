@@ -1,4 +1,5 @@
 import { HIDDEN_ATTRIBUTE, type HideRule } from '../../core/stylesheet';
+import { HOME_FEED_HIDDEN_MESSAGE, PLAYER_END_SCREEN_SELECTORS } from './shared';
 
 /**
  * Things in the watch page's right-hand column worth keeping it for: an open
@@ -25,7 +26,7 @@ export const YOUTUBE_HIDE_RULES: readonly HideRule[] = [
   max-width: none !important;
 }
 ytd-browse[page-subtype="home"] ytd-two-column-browse-results-renderer::before {
-  content: "Your home feed is hidden. Search for what you came to learn.";
+  content: "${HOME_FEED_HIDDEN_MESSAGE}";
   display: block;
   box-sizing: border-box;
   width: 100%;
@@ -81,15 +82,7 @@ ytd-browse[page-subtype="home"] ytd-two-column-browse-results-renderer::before {
   },
   {
     feature: 'ytEndScreen',
-    selectors: [
-      '.html5-endscreen',
-      '.ytp-endscreen-content',
-      '.ytp-autonav-endscreen',
-      '.ytp-videowall-still',
-      '.ytp-ce-element',
-      '.ytp-fullscreen-grid',
-      '.ytp-suggested-action',
-    ],
+    selectors: PLAYER_END_SCREEN_SELECTORS,
   },
   {
     feature: 'ytComments',

@@ -17,15 +17,24 @@ const youtubePage: Resolver = (url) => {
   return null;
 };
 
-/**
- * Answers page loads on the real site's URL with a captured snapshot, so
- * content scripts run exactly as they would there, with no network. Anything
- * else (images, unknown pages) is refused.
- */
-export async function serveFixtures(context: BrowserContext): Promise<void> {
-  await context.route('https://www.youtube.com/**', async (route) => {
+/** Which captured phone snapshot answers an m.youtube.com URL. */
+const youtubeMobilePage: Resolver = (url) => {
+  if (url.pathname === '/') return 'youtube-mobile/home.html';
+  if (url.pathname === '/results') return 'youtube-mobile/search.html';
+  if (url.pathname === '/watch') return 'youtube-mobile/watch.html';
+  if (url.pathname.startsWith('/shorts/')) return 'youtube-mobile/shorts.html';
+  if (url.pathname.startsWith('/@3blue1brown')) return 'youtube-mobile/channel-videos.html';
+  return null;
+};
+
+async function serveSite(
+  context: BrowserContext,
+  origin: string,
+  resolve: Resolver,
+): Promise<void> {
+  await context.route(`${origin}/**`, async (route) => {
     const request = route.request();
-    const file = request.resourceType() === 'document' ? youtubePage(new URL(request.url())) : null;
+    const file = request.resourceType() === 'document' ? resolve(new URL(request.url())) : null;
     if (file === null) {
       await route.abort();
       return;
@@ -35,4 +44,14 @@ export async function serveFixtures(context: BrowserContext): Promise<void> {
       body: await readFile(join(FIXTURES, file), 'utf8'),
     });
   });
+}
+
+/**
+ * Answers page loads on the real sites' URLs with a captured snapshot, so
+ * content scripts run exactly as they would there, with no network. Anything
+ * else (images, unknown pages) is refused.
+ */
+export async function serveFixtures(context: BrowserContext): Promise<void> {
+  await serveSite(context, 'https://www.youtube.com', youtubePage);
+  await serveSite(context, 'https://m.youtube.com', youtubeMobilePage);
 }

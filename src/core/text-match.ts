@@ -14,14 +14,14 @@ export type ChannelRef =
 const COMBINING_MARKS = /\p{M}+/gu;
 const NON_ALPHANUMERIC = /[^\p{L}\p{N}]+/gu;
 const CHANNEL_ID = /^UC[\w-]{22}$/;
-const URL_HANDLE = /(?:^|\/)@([\w.-]+)/;
+const URL_HANDLE = /(?:^|\/)@([^/?#\s]+)/;
 const URL_CHANNEL_ID = /\/channel\/(UC[\w-]{22})/;
 /** Scripts that separate words with spaces, where whole-word matching makes sense. */
 const SPACED_SCRIPT_EDGE = /[\p{Script=Latin}\p{Script=Cyrillic}\p{Script=Greek}\p{N}]/u;
 const WORD_CHAR_BEFORE = '(?<![\\p{L}\\p{N}])';
 const WORD_CHAR_AFTER = '(?![\\p{L}\\p{N}])';
 
-/** Case-, accent- and width-insensitive form used for every comparison. */
+/** Case-, accent- and width-insensitive form used for names, keywords and topics. */
 export function normalizeText(text: string): string {
   return text
     .normalize('NFKD')
@@ -74,7 +74,13 @@ export function parseChannelEntry(entry: string): ChannelRef {
   if (urlChannelId) return { kind: 'id', value: urlChannelId };
   if (CHANNEL_ID.test(trimmed)) return { kind: 'id', value: trimmed };
   const handle = URL_HANDLE.exec(trimmed)?.[1];
-  if (handle) return { kind: 'handle', value: handle.toLowerCase() };
+  if (handle) {
+    try {
+      return { kind: 'handle', value: decodeURIComponent(handle).toLowerCase() };
+    } catch {
+      return { kind: 'name', value: normalizeText(trimmed) };
+    }
+  }
   return { kind: 'name', value: normalizeText(trimmed) };
 }
 
@@ -83,11 +89,9 @@ function matchesRef(ref: ChannelRef, channel: ChannelIdentity): boolean {
     case 'id':
       return channel.id === ref.value;
     case 'handle':
-      // Many surfaces only show the display name, which often spells the handle.
-      return (
-        channel.handle === ref.value ||
-        (channel.name !== null && compact(channel.name) === compact(ref.value))
-      );
+      return channel.handle !== null
+        ? channel.handle === ref.value
+        : channel.name !== null && compact(channel.name) === compact(ref.value);
     case 'name': {
       const compactRef = compact(ref.value);
       return (

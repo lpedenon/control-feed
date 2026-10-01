@@ -1,5 +1,6 @@
 import type { ChannelIdentity } from '../../core/text-match';
 import type { TileSource } from '../../core/tile-filter';
+import { outermostMatch } from './shared';
 
 export interface YoutubeTileInfo {
   readonly title: string;
@@ -50,13 +51,7 @@ function cleanText(text: string | null | undefined): string | null {
 }
 
 export function resolveTile(element: Element): Element | null {
-  let tile = element.closest(TILE_SELECTOR);
-  let outer = tile?.parentElement?.closest(TILE_SELECTOR);
-  while (outer) {
-    tile = outer;
-    outer = tile.parentElement?.closest(TILE_SELECTOR);
-  }
-  return tile ?? null;
+  return outermostMatch(element, TILE_SELECTOR);
 }
 
 function readTitle(tile: Element): string | null {

@@ -4,6 +4,7 @@ import {
   test as base,
   expect as baseExpect,
   chromium,
+  devices,
   type Page,
   type Worker,
 } from '@playwright/test';
@@ -18,6 +19,12 @@ const WELCOME_TAB_TIMEOUT_MS = 10_000;
 interface ExtensionOptions {
   /** 'instagram' starts from a copy of the logged-in Instagram test profile. */
   profile: 'fresh' | 'instagram';
+  /**
+   * 'iphone' runs Chromium with an iPhone's user agent, screen and touch input,
+   * which is what makes YouTube serve its phone site. It is Chromium's
+   * emulation, not Safari on a phone.
+   */
+  device: 'desktop' | 'iphone';
 }
 
 interface ExtensionFixtures {
@@ -57,12 +64,16 @@ async function waitForWelcomeTab(context: BrowserContext, extensionId: string): 
  */
 export const test = base.extend<ExtensionFixtures & ExtensionOptions>({
   profile: ['fresh', { option: true }],
-  context: async ({ profile }, use) => {
+  device: ['desktop', { option: true }],
+  context: async ({ profile, device }, use) => {
     const copy = profile === 'instagram' ? await copyInstagramProfile() : null;
+    const { userAgent, viewport, deviceScaleFactor, isMobile, hasTouch } = devices['iPhone 15'];
     const context = await chromium.launchPersistentContext(copy?.dir ?? '', {
       channel: 'chromium',
       locale: 'en-US',
-      viewport: { width: 1280, height: 900 },
+      ...(device === 'iphone'
+        ? { userAgent, viewport, deviceScaleFactor, isMobile, hasTouch }
+        : { viewport: { width: 1280, height: 900 } }),
       args: [
         `--disable-extensions-except=${EXTENSION_PATH}`,
         `--load-extension=${EXTENSION_PATH}`,

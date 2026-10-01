@@ -75,6 +75,24 @@ describe('parseSettings', () => {
     expect(parsed).toEqual(DEFAULT_SETTINGS);
   });
 
+  it('preserves complete handle spellings through channel-list edits and JSON storage', () => {
+    const entries = [
+      '@Math·Studio',
+      '@math%C2%B7studio',
+      'https://m.youtube.com/@Math·Studio/videos',
+      'https://www.youtube.com/@math%C2%B7studio/videos',
+    ];
+    const edited = withYoutubeFilters(DEFAULT_SETTINGS, {
+      blockedChannels: entries,
+      allowedChannels: entries,
+      onlyAllowedChannels: true,
+    });
+    const stored = parseSettings(JSON.parse(JSON.stringify(edited)));
+    expect(stored.youtubeFilters.blockedChannels).toEqual(entries);
+    expect(stored.youtubeFilters.allowedChannels).toEqual(entries);
+    expect(stored.youtubeFilters.onlyAllowedChannels).toBe(true);
+  });
+
   it('normalizes list entries', () => {
     const parsed = parseSettings({
       youtubeFilters: { blockedKeywords: ['  prank ', '', 'Prank', 'reaction', 3] },

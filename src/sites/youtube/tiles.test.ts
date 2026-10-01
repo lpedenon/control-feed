@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { compileChannelMatcher } from '../../core/text-match';
 import { loadFixture } from '../../test-support/fixtures';
 import { describeTile, pageChannel, resolveTile, TILE_SELECTOR, youtubeTileSource } from './tiles';
 
@@ -47,6 +48,39 @@ describe('describeTile on search results', () => {
     expect(info?.channel).toEqual({ name: '3Blue1Brown', handle: '3blue1brown', id: null });
     expect(info?.title).toMatch(/linear/i);
   });
+
+  it.each(['math·studio', 'math%C2%B7studio'])(
+    'matches complete rules to desktop tile and page-owner identities from /@%s',
+    (handle) => {
+      const page = new DOMParser().parseFromString(
+        `<ytd-video-renderer>
+          <h3>Matrices explained</h3>
+          <ytd-channel-name><a href="/@${handle}">Math Studio</a></ytd-channel-name>
+        </ytd-video-renderer>`,
+        'text/html',
+      );
+      const tile = page.querySelector('ytd-video-renderer') as Element;
+      const linked = describeTile(tile, null);
+      expect(linked?.channel).toEqual({ name: 'Math Studio', handle: 'math·studio', id: null });
+      tile.querySelector('ytd-channel-name')?.remove();
+      const owner = pageChannel(new URL(`https://www.youtube.com/@${handle}/videos`), page);
+      const inherited = describeTile(tile, owner);
+      expect(inherited?.channel).toEqual({ name: null, handle: 'math·studio', id: null });
+      for (const rule of [
+        '@math·studio',
+        '@math%C2%B7studio',
+        'https://www.youtube.com/@math·studio/videos',
+        'https://www.youtube.com/@math%C2%B7studio/videos',
+      ]) {
+        const matches = compileChannelMatcher([rule]);
+        for (const info of [linked, inherited]) {
+          expect(info && matches(info.channel), rule).toBe(true);
+          expect(info && compileChannelMatcher(['@math'])(info.channel)).toBe(false);
+        }
+        expect(matches({ name: 'Math', handle: 'math', id: null }), rule).toBe(false);
+      }
+    },
+  );
 
   it('reads playlist lockups with their channel link', () => {
     const playlist = [...doc.querySelectorAll('yt-lockup-view-model')].find(
