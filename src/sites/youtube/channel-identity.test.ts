@@ -46,6 +46,8 @@ describe.each(readers)('$name known publisher identities', (reader) => {
         expect(inherited?.channel).toEqual(linked?.channel);
         return [linked, inherited];
       });
+      const matchingIdentities = identities[0];
+      if (!matchingIdentities) throw new Error('Expected matching publisher identities');
       for (const rule of rules) {
         const blocked = createYoutubeDecider({
           ...DEFAULT_SETTINGS.youtubeFilters,
@@ -67,7 +69,7 @@ describe.each(readers)('$name known publisher identities', (reader) => {
           allowedChannels: [rule],
           onlyAllowedChannels: true,
         });
-        for (const info of identities[0]) {
+        for (const info of matchingIdentities) {
           expect(blocked?.(info), rule).toBe('blocked-channel');
           expect(allowedKeywords?.(info), rule).toBeNull();
           expect(allowedTopics?.(info), rule).toBeNull();

@@ -281,7 +281,7 @@ test.describe('search', () => {
     [SEARCH, 'ytm-video-with-context-renderer'],
     [SEARCH, 'ytm-compact-playlist-renderer'],
     ['/watch?v=fNk_zzaMoSs', 'ytm-video-with-context-renderer'],
-  ]) {
+  ] as const) {
     test(`preserves middle dots in ${tag} publisher names on ${path}`, async ({
       page,
       setSettings,
