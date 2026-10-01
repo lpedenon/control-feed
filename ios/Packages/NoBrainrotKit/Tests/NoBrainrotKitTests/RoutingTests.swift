@@ -4,16 +4,19 @@ import Testing
 
 @Suite("Routing and handler entry point")
 struct RoutingTests {
-    @Test(arguments: AppRoute.allCases)
-    func everyScreenHasALink(route: AppRoute) {
-        #expect(AppRoute(url: URL(string: "nobrainrot://\(route.rawValue)")!) == route)
+    @Test(arguments: ["nobrainrot://rules", "NoBrainrot://Rules"])
+    func rulesLinkOpensRules(text: String) {
+        #expect(AppRoute(url: URL(string: text)!) == .rules)
     }
 
-    @Test func linksAreCaseInsensitiveAndIgnorePaths() {
-        #expect(AppRoute(url: URL(string: "NoBrainrot://Rules/extra?x=1")!) == .rules)
-    }
-
-    @Test(arguments: ["https://rules", "nobrainrot://", "nobrainrot://unknown", "other://rules", "nobrainrot:rules"])
+    @Test(arguments: [
+        "https://rules", "nobrainrot://", "nobrainrot://unknown", "other://rules", "nobrainrot:rules",
+        "nobrainrot://status", "nobrainrot://gate", "nobrainrot://help",
+        "nobrainrot://rules/extra", "nobrainrot://rules/", "nobrainrot://rules?x=1",
+        "nobrainrot://rules?", "nobrainrot://rules#fragment", "nobrainrot://rules#",
+        "nobrainrot://user@rules", "nobrainrot://user:password@rules", "nobrainrot://rules:123",
+        "NoBrainrot://Rules/extra?x=1"
+    ])
     func otherLinksAreIgnored(text: String) {
         #expect(AppRoute(url: URL(string: text)!) == nil)
     }

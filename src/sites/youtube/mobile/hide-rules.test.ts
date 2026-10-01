@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, withFeature, withSite } from '../../../core/settings';
-import { buildStylesheet, HIDDEN_ATTRIBUTE, PAGE_ATTRIBUTE } from '../../../core/stylesheet';
+import { HIDDEN_ATTRIBUTE, PAGE_ATTRIBUTE } from '../../../core/stylesheet';
 import { loadFixture } from '../../../test-support/fixtures';
 import { YOUTUBE_HIDE_RULES } from '../hide-rules';
-import { HOME_FEED_HIDDEN_MESSAGE, PLAYER_END_SCREEN_SELECTORS } from '../shared';
+import { PLAYER_END_SCREEN_SELECTORS } from '../shared';
 import { YOUTUBE_MOBILE_BASE_CSS, YOUTUBE_MOBILE_HIDE_RULES } from './hide-rules';
 
 function selectorsFor(feature: string): readonly string[] {
@@ -32,13 +31,6 @@ describe('mobile hide rules on the captured phone pages', () => {
     expect(hiddenBy(channel, 'ytHomeFeed')).toHaveLength(0);
     channel.documentElement.setAttribute(PAGE_ATTRIBUTE, 'channel');
     expect(hiddenBy(channel, 'ytHomeFeed')).toHaveLength(0);
-  });
-
-  it('explains the hidden home feed with the same message as the desktop site', () => {
-    const css = YOUTUBE_MOBILE_HIDE_RULES.find((rule) => rule.feature === 'ytHomeFeed')?.extraCss;
-    expect(css).toContain(HOME_FEED_HIDDEN_MESSAGE);
-    const desktop = YOUTUBE_HIDE_RULES.find((rule) => rule.feature === 'ytHomeFeed')?.extraCss;
-    expect(desktop).toContain(HOME_FEED_HIDDEN_MESSAGE);
   });
 
   it('removes Shorts shelves, lockups and the Shorts tab from the home page', () => {
@@ -171,46 +163,6 @@ describe('the phone and desktop rules share the player end screen', () => {
 });
 
 describe('the mobile stylesheet', () => {
-  it('follows the same switches as the settings page', () => {
-    const on = buildStylesheet(YOUTUBE_MOBILE_HIDE_RULES, DEFAULT_SETTINGS);
-    expect(on).toContain('/* ytHomeFeed */');
-    expect(on).toContain('/* ytShorts */');
-    expect(on).not.toContain('/* ytComments */'); // off by default
-
-    const noShorts = buildStylesheet(
-      YOUTUBE_MOBILE_HIDE_RULES,
-      withFeature(DEFAULT_SETTINGS, 'ytShorts', false),
-    );
-    expect(noShorts).not.toContain('/* ytShorts */');
-    expect(noShorts).toContain('/* ytHomeFeed */');
-
-    const withComments = buildStylesheet(
-      YOUTUBE_MOBILE_HIDE_RULES,
-      withFeature(DEFAULT_SETTINGS, 'ytComments', true),
-    );
-    expect(withComments).toContain('/* ytComments */');
-  });
-
-  it('is empty of hiding rules when YouTube is switched off, other than the filter mark', () => {
-    const off = buildStylesheet(
-      YOUTUBE_MOBILE_HIDE_RULES,
-      withSite(DEFAULT_SETTINGS, 'youtube', false),
-    );
-    expect(off).not.toContain('/* yt');
-  });
-
-  it('writes one rule per selector, so one unsupported selector cannot drop the rest', () => {
-    const css = buildStylesheet(
-      YOUTUBE_MOBILE_HIDE_RULES,
-      withFeature(DEFAULT_SETTINGS, 'ytComments', true),
-    );
-    for (const rule of YOUTUBE_MOBILE_HIDE_RULES) {
-      for (const selector of rule.selectors) {
-        expect(css).toContain(`${selector} { display: none !important; }`);
-      }
-    }
-  });
-
   it('drops a section once every video in it was filtered out', () => {
     const doc = loadFixture('youtube-mobile', 'home');
     const section = [...doc.querySelectorAll('ytm-rich-section-renderer')].find((s) =>

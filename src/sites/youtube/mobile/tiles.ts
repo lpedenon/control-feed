@@ -37,9 +37,6 @@ const METADATA_PART_SELECTOR =
 
 const NO_CHANNEL: ChannelIdentity = { name: null, handle: null, id: null };
 
-/** Playlists put "· Playlist" after the channel in the same byline part. */
-const BYLINE_SEPARATOR = ' · ';
-
 function cleanText(text: string | null | undefined): string | null {
   const cleaned = text?.replace(/\s+/g, ' ').trim();
   return cleaned ? cleaned : null;
@@ -59,7 +56,11 @@ function readTitle(tile: Element): string | null {
 
 function readChannelName(tile: Element): string | null {
   const byline = cleanText(tile.querySelector(BYLINE_PART_SELECTOR)?.textContent);
-  if (byline !== null) return cleanText(byline.split(BYLINE_SEPARATOR)[0]);
+  if (byline !== null) {
+    return tile.matches('ytm-compact-playlist-renderer')
+      ? cleanText(byline.replace(/ · Playlist$/, ''))
+      : byline;
+  }
   return cleanText(tile.querySelector(METADATA_PART_SELECTOR)?.textContent);
 }
 

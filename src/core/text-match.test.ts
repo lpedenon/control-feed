@@ -154,6 +154,14 @@ describe('compileChannelMatcher', () => {
     expect(matches(channel({ handle: 'math·studio' }))).toBe(true);
     expect(matches(channel({ handle: 'math' }))).toBe(false);
     expect(matches(channel({ name: 'Math', handle: 'math' }))).toBe(false);
+    expect(matches(channel({ name: 'Math Studio', handle: 'mathstudio' }))).toBe(false);
+    expect(matches(channel({ name: 'Math Studio', handle: 'math·studio' }))).toBe(true);
+    expect(matches(channel({ name: 'Math Studio' }))).toBe(true);
+    expect(
+      compileChannelMatcher(['Math Studio'])(
+        channel({ name: 'Math Studio', handle: 'mathstudio' }),
+      ),
+    ).toBe(true);
     expect(compileChannelMatcher(['@math'])(channel({ handle: 'math·studio' }))).toBe(false);
   });
 

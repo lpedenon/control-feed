@@ -89,11 +89,9 @@ function matchesRef(ref: ChannelRef, channel: ChannelIdentity): boolean {
     case 'id':
       return channel.id === ref.value;
     case 'handle':
-      // Many surfaces only show the display name, which often spells the handle.
-      return (
-        channel.handle === ref.value ||
-        (channel.name !== null && compact(channel.name) === compact(ref.value))
-      );
+      return channel.handle !== null
+        ? channel.handle === ref.value
+        : channel.name !== null && compact(channel.name) === compact(ref.value);
     case 'name': {
       const compactRef = compact(ref.value);
       return (

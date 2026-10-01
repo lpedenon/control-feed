@@ -90,6 +90,38 @@ describe('describeMobileTile on search results', () => {
     expect(info?.channel.name).not.toContain('·');
   });
 
+  it.each([
+    ['ytm-video-with-context-renderer', 'Music · Science'],
+    ['ytm-video-with-context-renderer', 'Music · Playlist'],
+    ['ytm-compact-playlist-renderer', 'Music · Science · Playlist'],
+    ['ytm-compact-playlist-renderer', 'Music · Science'],
+  ])('preserves the complete publisher byline for %s: %s', (tag, byline) => {
+    const tile = doc.querySelector(tag)?.cloneNode(true) as Element;
+    tile.querySelector('a[href^="/@"]')?.setAttribute('href', '/@educator123');
+    const part = tile.querySelector('ytm-badge-and-byline-renderer > span[dir]') as Element;
+    part.textContent = byline;
+    const info = describeMobileTile(tile, null);
+    const name = tag === 'ytm-video-with-context-renderer' ? byline : 'Music · Science';
+    expect(info?.channel).toEqual({ name, handle: 'educator123', id: null });
+    expect(createYoutubeDecider(withFilters({ blockedChannels: [name] }))?.(info)).toBe(
+      'blocked-channel',
+    );
+    expect(createYoutubeDecider(withFilters({ blockedChannels: ['Music'] }))?.(info)).toBeNull();
+    for (const filters of [
+      { blockedKeywords: ['matrices'] },
+      { topicMode: 'block' as const, topics: [{ name: 'Matrices', keywords: ['matrices'] }] },
+      { onlyAllowedChannels: true },
+    ]) {
+      const titled = info && { ...info, title: 'Matrices explained' };
+      expect(
+        createYoutubeDecider(withFilters({ ...filters, allowedChannels: ['Music'] }))?.(titled),
+      ).not.toBeNull();
+      expect(
+        createYoutubeDecider(withFilters({ ...filters, allowedChannels: [name] }))?.(titled),
+      ).toBeNull();
+    }
+  });
+
   it('reads Shorts with a title but no channel', () => {
     const shorts = [...doc.querySelectorAll('ytm-shorts-lockup-view-model')];
     expect(shorts.length).toBeGreaterThan(5);

@@ -115,6 +115,11 @@ test.describe('home', () => {
     await expect(page.locator('ytm-rich-grid-renderer')).toBeHidden();
     await setSettings(withFeature(DEFAULT_SETTINGS, 'ytHomeFeed', false));
     await expect(page.locator('ytm-rich-grid-renderer')).toBeVisible();
+    expect(
+      await page
+        .locator('ytm-single-column-browse-results-renderer')
+        .evaluate((element) => getComputedStyle(element, '::before').content),
+    ).toBe('none');
   });
 });
 
@@ -167,7 +172,10 @@ test.describe('search', () => {
         prefix.id = 'prefix-regression';
         prefix.innerHTML = `<a href="/@math">Math</a><h3>Matrices explained</h3>
           <ytm-badge-and-byline-renderer><span dir="auto">Math</span></ytm-badge-and-byline-renderer>`;
-        document.querySelector('ytm-item-section-renderer')?.append(tile, prefix);
+        const conflicting = tile.cloneNode(true) as Element;
+        conflicting.id = 'conflicting-handle-regression';
+        conflicting.querySelector('a')?.setAttribute('href', '/@mathstudio');
+        document.querySelector('ytm-item-section-renderer')?.append(tile, prefix, conflicting);
       }, handle);
       const tile = page.locator('#handle-regression');
       await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-keyword');
@@ -214,6 +222,8 @@ test.describe('search', () => {
         await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-channel');
         await expect(tile).toBeHidden();
         await expect(prefix).toBeVisible();
+        const conflicting = page.locator('#conflicting-handle-regression');
+        await expect(conflicting).toBeVisible();
 
         await setSettings(
           withYoutubeFilters(DEFAULT_SETTINGS, {
@@ -224,6 +234,7 @@ test.describe('search', () => {
         await expect(tile).toBeVisible();
         await expect(tile).not.toHaveAttribute(HIDDEN_ATTRIBUTE);
         await expect(prefix).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-keyword');
+        await expect(conflicting).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-keyword');
 
         await setSettings(
           withYoutubeFilters(DEFAULT_SETTINGS, {
@@ -242,6 +253,7 @@ test.describe('search', () => {
         await expect(tile).toBeVisible();
         await expect(tile).not.toHaveAttribute(HIDDEN_ATTRIBUTE);
         await expect(prefix).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-topic');
+        await expect(conflicting).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-topic');
 
         await setSettings(
           withYoutubeFilters(DEFAULT_SETTINGS, {
@@ -260,6 +272,55 @@ test.describe('search', () => {
         await expect(tile).toBeVisible();
         await expect(tile).not.toHaveAttribute(HIDDEN_ATTRIBUTE);
         await expect(prefix).toHaveAttribute(HIDDEN_ATTRIBUTE, 'not-allowed-channel');
+        await expect(conflicting).toHaveAttribute(HIDDEN_ATTRIBUTE, 'not-allowed-channel');
+      }
+    });
+  }
+
+  for (const [path, tag] of [
+    [SEARCH, 'ytm-video-with-context-renderer'],
+    [SEARCH, 'ytm-compact-playlist-renderer'],
+    ['/watch?v=fNk_zzaMoSs', 'ytm-video-with-context-renderer'],
+  ]) {
+    test(`preserves middle dots in ${tag} publisher names on ${path}`, async ({
+      page,
+      setSettings,
+    }) => {
+      const settings = withFeature(DEFAULT_SETTINGS, 'ytRelated', false);
+      await setSettings(settings);
+      await openPage(page, path);
+      await page
+        .locator(tag)
+        .first()
+        .evaluate((tile) => {
+          tile.id = 'byline-regression';
+          const heading = tile.querySelector('h3');
+          const byline = tile.querySelector('ytm-badge-and-byline-renderer > span[dir]');
+          if (!heading || !byline) throw new Error('The fixture tile needs a heading and byline');
+          heading.textContent = 'Matrices explained';
+          tile.querySelector('a[href^="/@"]')?.setAttribute('href', '/@educator123');
+          byline.textContent = tile.matches('ytm-compact-playlist-renderer')
+            ? 'Music · Science · Playlist'
+            : 'Music · Science';
+        });
+      const tile = page.locator('#byline-regression');
+      await setSettings(withYoutubeFilters(settings, { blockedChannels: ['Music · Science'] }));
+      await expect(tile).toHaveAttribute(HIDDEN_ATTRIBUTE, 'blocked-channel');
+      await expect(tile).toBeHidden();
+      await setSettings(withYoutubeFilters(settings, { blockedChannels: ['Music'] }));
+      await expect(tile).toBeVisible();
+      for (const filters of [
+        { blockedKeywords: ['matrices'] },
+        { topicMode: 'block' as const, topics: [{ name: 'Matrices', keywords: ['matrices'] }] },
+        { onlyAllowedChannels: true },
+      ]) {
+        await setSettings(withYoutubeFilters(settings, { ...filters, allowedChannels: ['Music'] }));
+        await expect(tile).toBeHidden();
+        await setSettings(
+          withYoutubeFilters(settings, { ...filters, allowedChannels: ['Music · Science'] }),
+        );
+        await expect(tile).toBeVisible();
+        await expect(tile).not.toHaveAttribute(HIDDEN_ATTRIBUTE);
       }
     });
   }
@@ -336,6 +397,8 @@ test.describe('watch page', () => {
     await setSettings(withFeature(DEFAULT_SETTINGS, 'ytComments', true));
     await expect(page.locator('yt-video-metadata-carousel-view-model')).toBeHidden();
     await expect(page.locator('ytm-slim-video-metadata-section-renderer')).toBeVisible();
+    await setSettings(withFeature(DEFAULT_SETTINGS, 'ytComments', false));
+    await expect(page.locator('yt-video-metadata-carousel-view-model')).toBeVisible();
   });
 
   test('shows related videos again when that switch is turned off', async ({
@@ -411,11 +474,30 @@ test.describe('redirects and switches', () => {
     await expect(page).toHaveURL(`${YT}/watch?v=nIoyae9byFc`);
   });
 
+  test('updates Shorts visibility when its switch changes', async ({ page, setSettings }) => {
+    await setSettings(DEFAULT_SETTINGS);
+    await openPage(page, SEARCH);
+    const shelf = page.locator('grid-shelf-view-model').first();
+    await expect(shelf).toBeHidden();
+    await setSettings(withFeature(DEFAULT_SETTINGS, 'ytShorts', false));
+    await expect(shelf).toBeVisible();
+    await expect(page.locator('ytm-pivot-bar-item-renderer').nth(1)).toBeVisible();
+    await setSettings(DEFAULT_SETTINGS);
+    await expect(shelf).toBeHidden();
+  });
+
   test('does nothing when YouTube is switched off', async ({ page, setSettings }) => {
     await setSettings(withSite(DEFAULT_SETTINGS, 'youtube', false));
     await openPage(page, SEARCH);
     await expect(page.locator('grid-shelf-view-model').first()).toBeVisible();
     await expect(page.locator('ytm-pivot-bar-item-renderer').nth(1)).toBeVisible();
+    await openPage(page, '/');
+    await expect(page.locator('ytm-rich-grid-renderer')).toBeVisible();
+    expect(
+      await page
+        .locator('ytm-single-column-browse-results-renderer')
+        .evaluate((element) => getComputedStyle(element, '::before').content),
+    ).toBe('none');
     await openPage(page, '/shorts/nIoyae9byFc');
     expect(new URL(page.url()).pathname).toBe('/shorts/nIoyae9byFc');
   });

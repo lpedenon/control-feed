@@ -61,7 +61,6 @@ targets:
         # Lets the app ask whether the YouTube app is installed, and nothing else.
         LSApplicationQueriesSchemes:
           - youtube
-        # nobrainrot://rules and the like, used by the extension's popup.
         CFBundleURLTypes:
           - CFBundleURLName: $(NB_BUNDLE_ID)
             CFBundleURLSchemes:
